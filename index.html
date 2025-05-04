@@ -334,19 +334,7 @@
       `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
-
-      const acc = document.getElementsByClassName("accordion");
-      for (let i = 0; i < acc.length; i++) {
-        acc[i].addEventListener("click", function() {
-          this.classList.toggle("active");
-          let panel = this.nextElementSibling;
-          if (panel.style.display === "block") {
-            panel.style.display = "none";
-          } else {
-            panel.style.display = "block";
-          }
-        });
-      }
+      setUpAccordion(file.name);
     };
     reader.readAsText(file);
   }
@@ -384,6 +372,15 @@
     button.closest('.gcode-result').remove();
     allResults = allResults.filter(result => result.fileName !== fileName);
     updateTotalCosts();
+  }
+
+  function setUpAccordion(fileName) {
+    const accordion = document.querySelector(`#gcode-${fileName} .accordion`);
+    const panel = document.querySelector(`#gcode-${fileName} .panel`);
+    accordion.addEventListener('click', function() {
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      accordion.classList.toggle('active');
+    });
   }
 
   document.getElementById('processButton').addEventListener('click', () => {
