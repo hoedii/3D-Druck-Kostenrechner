@@ -343,6 +343,14 @@
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + " CHF";
     document.getElementById('totalCost').textContent = totalCost.toFixed(2) + " CHF";
     document.getElementById('totalCostContainer').style.display = 'block';
+
+    const accordions = document.querySelectorAll('.accordion');
+    accordions.forEach((accordion, index) => {
+      accordion.addEventListener('click', function() {
+        const panel = accordion.nextElementSibling;
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      });
+    });
   }
 
   function removeResult(fileName) {
@@ -357,9 +365,8 @@
       return;
     }
 
-    // Keine Leeren des 'fileInfo'-Containers mehr!
     for (let file of gcodeFiles) {
-      processGCodeFile(file);  // Verarbeitet jede Datei einzeln und fügt sie den Ergebnissen hinzu
+      processGCodeFile(file);  
     }
   });
 </script>
