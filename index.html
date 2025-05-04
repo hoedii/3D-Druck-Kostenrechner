@@ -334,7 +334,19 @@
       `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
-      setUpAccordion(file.name);
+
+      const acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+          if (panel.style.display === "block") {
+            panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+          }
+        });
+      }
     };
     reader.readAsText(file);
   }
@@ -365,22 +377,13 @@
     document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
     document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
-    document.getElementById('totalCostContainer').style.display = allResults.length > 0 ? 'block' : 'none';
+    document.getElementById('totalCostContainer').style.display = 'block';
   }
 
   function deleteResult(button, fileName) {
     button.closest('.gcode-result').remove();
     allResults = allResults.filter(result => result.fileName !== fileName);
     updateTotalCosts();
-  }
-
-  function setUpAccordion(fileName) {
-    const accordion = document.querySelector(`#gcode-${fileName} .accordion`);
-    const panel = document.querySelector(`#gcode-${fileName} .panel`);
-    accordion.addEventListener('click', function() {
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-      accordion.classList.toggle('active');
-    });
   }
 
   document.getElementById('processButton').addEventListener('click', () => {
