@@ -250,16 +250,18 @@
       totalCost += totalFileCost;
 
       const outputHtml = `
-        <button class="accordion">Ergebnisse für ${file.name}</button>
-        <div class="panel">
-          <p><strong>Materialtyp:</strong> ${materialType}</p>
-          <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
-          <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-          <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
-          <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-          <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-          <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-          <button class="delete-button" onclick="deleteResult(this)">Löschen</button>
+        <div class="gcode-result" id="gcode-${file.name}">
+          <button class="accordion">Ergebnisse für ${file.name}</button>
+          <div class="panel">
+            <p><strong>Materialtyp:</strong> ${materialType}</p>
+            <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
+            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
+          </div>
         </div>
       `;
       document.getElementById('fileInfo').innerHTML += outputHtml;
@@ -288,12 +290,12 @@
     document.getElementById('totalCosts').innerHTML = totalHtml;
   }
 
-  function deleteResult(button) {
-    const panel = button.closest('.panel');
-    const fileCost = parseFloat(panel.querySelector('p strong:last-of-type').textContent.replace(' CHF', ''));
-    totalCost -= fileCost;
-    panel.closest('.accordion').remove();  // Entfernt den gesamten Abschnitt, einschließlich Button und Panel
-    updateTotalCosts();
+  function deleteResult(button, fileName) {
+    const resultElement = document.getElementById(`gcode-${fileName}`);
+    if (resultElement) {
+      resultElement.remove();
+    }
+    updateTotalCosts(); // Update the total costs after removal
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
