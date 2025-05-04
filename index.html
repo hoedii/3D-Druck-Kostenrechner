@@ -17,6 +17,15 @@
             color: white;
             padding: 20px;
             text-align: center;
+            position: relative;
+        }
+
+        header img {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 50px;
         }
 
         .container {
@@ -79,6 +88,7 @@
 <body>
 
 <header>
+    <img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/logo.png" alt="Logo">
     <h1>3D Druck Kostenrechner</h1>
 </header>
 
@@ -88,21 +98,17 @@
     <button id="processButton">Berechnen</button>
     <button id="clearButton">Clear</button>
 
-    <div id="fileInfo">
-        <!-- Hier werden die Ergebnisse angezeigt -->
-    </div>
+    <div id="fileInfo"></div>
 </div>
 
 <script>
-    // Dummy-Konfigurationsdaten, die du auf der Webseite verwenden kannst
     const costConfig = {
-        material_price_per_kg_PLA: 25.0, // Preis pro kg PLA
-        material_price_per_kg_TPU: 40.0, // Preis pro kg TPU
-        time_price_per_hour: 2.0,        // Preis pro Stunde
-        energy_price_per_kwh: 0.2       // Preis pro kWh
+        material_price_per_kg_PLA: 25.0,
+        material_price_per_kg_TPU: 40.0,
+        time_price_per_hour: 2.0,
+        energy_price_per_kwh: 0.2
     };
 
-    // Funktion zur Umrechnung der Druckzeit in Stunden
     function convertTimeToHours(timeStr) {
         const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
         if (timeMatch) {
@@ -115,57 +121,55 @@
         return 0;
     }
 
-    // GCode-Datei verarbeiten und die relevanten Informationen extrahieren
     function processGCodeFile(file) {
         const reader = new FileReader();
         reader.onload = function(event) {
             const gcodeText = event.target.result;
             let usedFilament = 0;
             let printTime = 0;
-            let materialType = 'PLA'; // Standardmaterial
+            let materialType = 'PLA';
             let printTimeStr = '';
 
-            // Materialtyp extrahieren (z.B. PLA, TPU)
             const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
             if (materialMatch) {
                 try {
                     const materialInfo = JSON.parse(materialMatch[1]);
                     if (Array.isArray(materialInfo) && materialInfo.length > 0) {
-                        materialType = materialInfo[0].material_type || 'PLA'; // Standard auf PLA, wenn nicht angegeben
+                        materialType = materialInfo[0].material_type || 'PLA';
                     }
                 } catch (e) {
                     console.error('Fehler beim Parsen des Materialtyps:', e);
                 }
             }
 
-            // Durchsuche die GCode-Datei nach den relevanten Informationen
             const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
             if (filamentMatch) {
                 usedFilament = parseFloat(filamentMatch[1]);
             }
 
-            const timeMatch = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-            if (timeMatch) {
-                printTimeStr = timeMatch[1].trim();
+            const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+            const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+            const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+
+            if (timeMatch1) {
+                printTimeStr = timeMatch1[1].trim();
+                printTime = convertTimeToHours(printTimeStr);
+            } else if (timeMatch2) {
+                printTime = parseInt(timeMatch2[1], 10) / 3600;
+                printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+            } else if (timeMatch3) {
+                printTimeStr = timeMatch3[1].trim();
                 printTime = convertTimeToHours(printTimeStr);
             }
 
-            // Materialpreis berechnen basierend auf dem Materialtyp
             const materialPriceKey = `material_price_per_kg_${materialType}`;
-            const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA; // Standard auf PLA, falls nicht gefunden
+            const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
             const materialCost = (usedFilament / 1000) * materialPrice;
-
-            // Zeitkosten berechnen
             const timeCost = printTime * costConfig.time_price_per_hour;
-
-            // Energieverbrauch berechnen
-            const energyConsumedKwh = (250 * printTime) / 1000; // Angenommene Druckerleistung 250W
+            const energyConsumedKwh = (250 * printTime) / 1000;
             const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
-
-            // Gesamtkosten berechnen
             const totalCost = materialCost + timeCost + energyCost;
 
-            // Ergebnisse anzeigen
             const outputHtml = `
                 <h3 class="result-header">Ergebnisse:</h3>
                 <p><strong>Datei:</strong> ${file.name}</p>
@@ -182,7 +186,6 @@
         reader.readAsText(file);
     }
 
-    // Event Listener für den Berechnen-Button
     document.getElementById('processButton').addEventListener('click', function() {
         const fileInput = document.getElementById('gcodeInput');
         const file = fileInput.files[0];
@@ -193,7 +196,6 @@
         }
     });
 
-    // Event Listener für den Clear-Button
     document.getElementById('clearButton').addEventListener('click', function() {
         document.getElementById('gcodeInput').value = '';
         document.getElementById('fileInfo').innerHTML = '';
