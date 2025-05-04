@@ -254,4 +254,10 @@
     if (file) {
       processGCodeFile(file);
     } else {
-      document
+      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte laden Sie eine GCode-Datei hoch.</p>';
+    }
+  });
+</script>
+
+</body>
+</html>
