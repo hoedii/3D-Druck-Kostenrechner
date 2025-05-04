@@ -291,7 +291,7 @@
         printTime = convertTimeToHours(printTimeStr);
       } else if (timeMatch2) {
         printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = ${Math.round(printTime * 60)} Minuten;
+        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
       } else if (timeMatch3) {
         printTimeStr = timeMatch3[1].trim();
         printTime = convertTimeToHours(printTimeStr);
@@ -349,7 +349,7 @@
       totalEnergyCost += energyCost;
       totalCost += totalFileCost;
 
-      const outputHtml = 
+      const outputHtml = `
         <div class="gcode-result" id="gcode-${file.name}">
           <div class="accordion">
             <span>${file.name}</span>
@@ -365,7 +365,7 @@
             <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
         </div>
-      ;
+      `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
       addAccordionListeners();
@@ -434,5 +434,3 @@
 
 </body>
 </html>
-
-
