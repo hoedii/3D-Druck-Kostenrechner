@@ -98,6 +98,18 @@
     .clear-button:hover {
       background-color: #bbb;
     }
+
+    .summary {
+      background-color: #eef9ee;
+      border: 1px solid #cce5cc;
+      border-radius: 4px;
+      padding: 15px;
+      margin-top: 30px;
+    }
+
+    .summary p {
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -108,11 +120,12 @@
 </header>
 
 <div class="container">
-  <h2>GCode-Datei hochladen</h2>
-  <input type="file" id="gcodeInput" accept=".gcode">
+  <h2>GCode-Dateien hochladen (Mehrfachauswahl möglich)</h2>
+  <input type="file" id="gcodeInput" accept=".gcode" multiple>
   <button id="processButton">Berechnen</button>
 
   <div id="fileInfo"></div>
+  <div id="summaryInfo" class="summary"></div>
   <div id="clearContainer"></div>
 </div>
 
@@ -141,97 +154,126 @@
     return 0;
   }
 
-  function processGCodeFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const gcodeText = event.target.result;
-      let usedFilament = 0;
-      let printTime = 0;
-      let materialType = 'PLA';
-      let printTimeStr = '';
+  function processGCodeFiles(files) {
+    let resultsHTML = '';
+    let totalMaterialCost = 0;
+    let totalTimeCost = 0;
+    let totalEnergyCost = 0;
+    let totalOverallCost = 0;
+    let processedCount = 0;
 
-      const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
-      if (materialMatch) {
-        try {
-          const materialInfo = JSON.parse(materialMatch[1]);
-          if (Array.isArray(materialInfo) && materialInfo.length > 0) {
-            materialType = materialInfo[0].material_type || 'PLA';
+    Array.from(files).forEach(file => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const gcodeText = event.target.result;
+        let usedFilament = 0;
+        let printTime = 0;
+        let materialType = 'PLA';
+        let printTimeStr = '';
+
+        const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+        if (materialMatch) {
+          try {
+            const materialInfo = JSON.parse(materialMatch[1]);
+            if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+              materialType = materialInfo[0].material_type || 'PLA';
+            }
+          } catch (e) {
+            console.warn('Materialtyp konnte nicht geparst werden.');
           }
-        } catch (e) {
-          console.error('Fehler beim Parsen des Materialtyps:', e);
         }
-      }
 
-      const filamentMatch = gcodeText.match(/; total filament used \[g\] = ([\d.]+)/);
-      if (filamentMatch) {
-        usedFilament = parseFloat(filamentMatch[1]);
-      }
+        const filamentMatch = gcodeText.match(/; total filament used \[g\] = ([\d.]+)/);
+        if (filamentMatch) {
+          usedFilament = parseFloat(filamentMatch[1]);
+        }
 
-      const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-      const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
-      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\ddhms\s]+)/i);
+        const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+        const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+        const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\ddhms\s]+)/i);
 
-      if (timeMatch1) {
-        printTimeStr = timeMatch1[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      } else if (timeMatch2) {
-        printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = `${Math.floor(printTime)}h ${Math.round((printTime % 1) * 60)}m`;
-      } else if (timeMatch3) {
-        printTimeStr = timeMatch3[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      }
+        if (timeMatch1) {
+          printTimeStr = timeMatch1[1].trim();
+          printTime = convertTimeToHours(printTimeStr);
+        } else if (timeMatch2) {
+          printTime = parseInt(timeMatch2[1], 10) / 3600;
+          printTimeStr = `${Math.floor(printTime)}h ${Math.round((printTime % 1) * 60)}m`;
+        } else if (timeMatch3) {
+          printTimeStr = timeMatch3[1].trim();
+          printTime = convertTimeToHours(printTimeStr);
+        }
 
-      const materialKey = `material_price_per_kg_${materialType}`;
-      const materialPrice = costConfig[materialKey] || costConfig.material_price_per_kg_PLA;
-      const materialCost = (usedFilament / 1000) * materialPrice;
+        const materialKey = `material_price_per_kg_${materialType}`;
+        const materialPrice = costConfig[materialKey] || costConfig.material_price_per_kg_PLA;
+        const materialCost = (usedFilament / 1000) * materialPrice;
 
-      let timePricePerHour;
-      if (printTime <= 5) {
-        timePricePerHour = costConfig.time_price_per_hour;
-      } else if (printTime <= 10) {
-        timePricePerHour = costConfig.time_price_per_hour5;
-      } else {
-        timePricePerHour = costConfig.time_price_per_hour10;
-      }
+        let timePricePerHour;
+        if (printTime <= 5) {
+          timePricePerHour = costConfig.time_price_per_hour;
+        } else if (printTime <= 10) {
+          timePricePerHour = costConfig.time_price_per_hour5;
+        } else {
+          timePricePerHour = costConfig.time_price_per_hour10;
+        }
 
-      const timeCost = printTime * timePricePerHour;
-      const energyConsumed = (250 * printTime) / 1000;
-      const energyCost = energyConsumed * costConfig.energy_price_per_kwh;
-      const totalCost = materialCost + timeCost + energyCost;
+        const timeCost = printTime * timePricePerHour;
+        const energyConsumed = (250 * printTime) / 1000;
+        const energyCost = energyConsumed * costConfig.energy_price_per_kwh;
+        const totalCost = materialCost + timeCost + energyCost;
 
-      const outputHtml = `
-        <h3 class="result-header">Ergebnisse:</h3>
-        <p><strong>Datei:</strong> ${file.name}</p>
-        <p><strong>Materialtyp:</strong> ${materialType}</p>
-        <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-        <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-        <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
-        <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-        <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-        <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
-      `;
-      document.getElementById('fileInfo').innerHTML = outputHtml;
-      document.getElementById('clearContainer').innerHTML = `
-        <button class="clear-button" onclick="clearOutput()">Ergebnisse zurücksetzen</button>
-      `;
-    };
-    reader.readAsText(file);
+        totalMaterialCost += materialCost;
+        totalTimeCost += timeCost;
+        totalEnergyCost += energyCost;
+        totalOverallCost += totalCost;
+
+        resultsHTML += `
+          <div class="output">
+            <h3 class="result-header">${file.name}</h3>
+            <p><strong>Materialtyp:</strong> ${materialType}</p>
+            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
+            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+          </div>
+        `;
+
+        processedCount++;
+        if (processedCount === files.length) {
+          document.getElementById('fileInfo').innerHTML = resultsHTML;
+
+          document.getElementById('summaryInfo').innerHTML = `
+            <p>📊 <strong>Gesamtübersicht:</strong></p>
+            <p>Materialkosten gesamt: ${totalMaterialCost.toFixed(2)} CHF</p>
+            <p>Zeitkosten gesamt: ${totalTimeCost.toFixed(2)} CHF</p>
+            <p>Stromkosten gesamt: ${totalEnergyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten aller Dateien: ${totalOverallCost.toFixed(2)} CHF</strong></p>
+          `;
+
+          document.getElementById('clearContainer').innerHTML = `
+            <button class="clear-button" onclick="clearOutput()">Ergebnisse zurücksetzen</button>
+          `;
+        }
+      };
+      reader.readAsText(file);
+    });
   }
 
   function clearOutput() {
     document.getElementById('gcodeInput').value = '';
     document.getElementById('fileInfo').innerHTML = '';
+    document.getElementById('summaryInfo').innerHTML = '';
     document.getElementById('clearContainer').innerHTML = '';
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
     const fileInput = document.getElementById('gcodeInput');
-    const file = fileInput.files[0];
-    if (file) {
-      processGCodeFile(file);
+    const files = fileInput.files;
+    if (files.length > 0) {
+      processGCodeFiles(files);
     } else {
-      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle eine GCode-Datei aus.</p>';
+      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle mindestens eine GCode-Datei aus.</p>';
     }
   });
 </script>
