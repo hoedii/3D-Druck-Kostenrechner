@@ -156,12 +156,13 @@
     }
 
     .total-cost-container {
+      display: none; /* Initially hidden */
       margin-top: 20px;
       padding: 20px;
       background-color: #f9f9f9;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: center;
+      text-align: left; /* Left align */
     }
 
     .total-cost-container p {
@@ -186,7 +187,7 @@
   <div id="clearContainer"></div>
   
   <!-- Die Gesamtkosten werden hier angezeigt -->
-  <div class="total-cost-container">
+  <div class="total-cost-container" id="totalCostContainer">
     <h3>Gesamtkosten</h3>
     <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
     <p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
@@ -300,6 +301,7 @@
       `;
       document.getElementById('fileInfo').innerHTML += outputHtml;
       updateTotalCosts();
+      document.getElementById('totalCostContainer').style.display = 'block'; // Show total cost container
     };
     reader.readAsText(file);
   }
@@ -341,28 +343,32 @@
 
     allResults = allResults.filter(result => result.fileName !== fileName);
     updateTotalCosts(); // Update the total costs after removal
+
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none'; // Hide if no results
+    }
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
-    const fileInput = document.getElementById('gcodeInput');
-    const files = fileInput.files;
-    if (files.length > 0) {
-      Array.from(files).forEach(file => processGCodeFile(file));
-    } else {
-      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle eine oder mehrere GCode-Dateien aus.</p>';
+    const gcodeFiles = document.getElementById('gcodeInput').files;
+    if (gcodeFiles.length === 0) {
+      alert('Bitte wählen Sie eine GCode-Datei aus.');
+      return;
+    }
+
+    document.getElementById('fileInfo').innerHTML = ''; 
+    for (let file of gcodeFiles) {
+      processGCodeFile(file);
     }
   });
 
-  document.getElementById('fileInfo').addEventListener('click', function(e) {
-    if (e.target && e.target.classList.contains('accordion')) {
-      e.target.classList.toggle('active');
-      const panel = e.target.nextElementSibling;
-      if (panel.style.display === 'block') {
-        panel.style.display = 'none';
-      } else {
-        panel.style.display = 'block';
-      }
-    }
+  const accordions = document.querySelectorAll('.accordion');
+  accordions.forEach((accordion) => {
+    accordion.addEventListener('click', function() {
+      this.classList.toggle('active');
+      const panel = this.nextElementSibling;
+      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    });
   });
 </script>
 
