@@ -117,11 +117,17 @@
 </div>
 
 <script>
+  // Konfiguration mit den neuen Parametern aus der JSON-Datei
   const costConfig = {
-    material_price_per_kg_PLA: 25.0,
-    material_price_per_kg_TPU: 40.0,
-    time_price_per_hour: 2.0,
-    energy_price_per_kwh: 0.2
+    time_price_per_hour: 2.75,
+    time_price_per_hour5: 2,
+    time_price_per_hour10: 1.5,
+    material_price_per_kg_PLA: 24.0,
+    material_price_per_kg_ABS: 23.0,
+    material_price_per_kg_TPU: 28.0,
+    material_price_per_kg_PETG: 18.0,
+    material_price_per_kg_ASA: 32.0,
+    energy_price_per_kwh: 0.40
   };
 
   function convertTimeToHours(timeStr) {
@@ -145,6 +151,7 @@
       let materialType = 'PLA';
       let printTimeStr = '';
 
+      // Materialtyp aus dem GCode auslesen
       const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
       if (materialMatch) {
         try {
@@ -157,11 +164,13 @@
         }
       }
 
+      // Verwendetes Filament auslesen
       const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
       if (filamentMatch) {
         usedFilament = parseFloat(filamentMatch[1]);
       }
 
+      // Druckzeit auslesen
       const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
       const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
       const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
@@ -177,10 +186,38 @@
         printTime = convertTimeToHours(printTimeStr);
       }
 
-      const materialPriceKey = `material_price_per_kg_${materialType}`;
-      const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
+      // Materialpreis basierend auf dem Typ auswählen
+      let materialPrice;
+      switch (materialType) {
+        case 'ABS':
+          materialPrice = costConfig.material_price_per_kg_ABS;
+          break;
+        case 'TPU':
+          materialPrice = costConfig.material_price_per_kg_TPU;
+          break;
+        case 'PETG':
+          materialPrice = costConfig.material_price_per_kg_PETG;
+          break;
+        case 'ASA':
+          materialPrice = costConfig.material_price_per_kg_ASA;
+          break;
+        default:
+          materialPrice = costConfig.material_price_per_kg_PLA;
+          break;
+      }
+
       const materialCost = (usedFilament / 1000) * materialPrice;
-      const timeCost = printTime * costConfig.time_price_per_hour;
+
+      // Zeitkosten basierend auf der Druckzeit
+      let timeCost;
+      if (printTime <= 5) {
+        timeCost = printTime * costConfig.time_price_per_hour5;
+      } else if (printTime <= 10) {
+        timeCost = printTime * costConfig.time_price_per_hour10;
+      } else {
+        timeCost = printTime * costConfig.time_price_per_hour;
+      }
+
       const energyConsumedKwh = (250 * printTime) / 1000;
       const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
       const totalCost = materialCost + timeCost + energyCost;
@@ -217,10 +254,4 @@
     if (file) {
       processGCodeFile(file);
     } else {
-      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle eine GCode-Datei aus.</p>';
-    }
-  });
-</script>
-
-</body>
-</html>
+      document
