@@ -100,29 +100,27 @@
 </div>
 
 <script>
-    function convertTimeToHMS(timeStr) {
-        const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/;
-        const match = timeStr.match(regex);
+    function parsePrintTime(str) {
+        let regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/;
+        let match = str.match(regex);
         if (!match) return { hours: 0, formatted: "0d 0h 0m 0s" };
-
-        const days = parseInt(match[1] || 0);
-        const hours = parseInt(match[2] || 0);
-        const minutes = parseInt(match[3] || 0);
-        const seconds = parseInt(match[4] || 0);
-        const totalHours = days * 24 + hours + minutes / 60 + seconds / 3600;
-
+        let days = parseInt(match[1] || 0);
+        let hours = parseInt(match[2] || 0);
+        let minutes = parseInt(match[3] || 0);
+        let seconds = parseInt(match[4] || 0);
+        let totalHours = days * 24 + hours + minutes / 60 + seconds / 3600;
         return {
             hours: totalHours,
             formatted: `${days}d ${hours}h ${minutes}m ${seconds}s`
         };
     }
 
-    document.getElementById('processButton').addEventListener('click', () => {
+    document.getElementById('processButton').addEventListener('click', function () {
         const fileInput = document.getElementById('gcodeInput');
         const outputDiv = document.getElementById('output');
         const files = fileInput.files;
 
-        if (!files.length) {
+        if (files.length === 0) {
             outputDiv.innerHTML = '<p class="error">Bitte wähle eine oder mehrere GCode-Dateien aus.</p>';
             return;
         }
@@ -134,49 +132,57 @@
 
                 Array.from(files).forEach(file => {
                     const reader = new FileReader();
+                    reader.onload = function (event) {
+                        const content = event.target.result;
+                        let lines = content.split('\n');
 
-                    reader.onload = () => {
-                        const content = reader.result;
-
-                        let materialType = 'Unknown';
                         let usedFilament = 0;
-                        let printTimeStr = "0d 0h 0m 0s";
-                        let printHours = 0;
+                        let materialType = 'Unknown';
+                        let printTimeString = null;
 
-                        // Materialtyp
-                        const materialMatch = content.match(/; paint_info = (\[.*?\])/);
-                        if (materialMatch) {
-                            try {
-                                const paintInfo = JSON.parse(materialMatch[1]);
-                                materialType = paintInfo[0].material_type || 'Unknown';
-                            } catch {}
+                        lines.forEach(line => {
+                            if (line.includes('; total filament used [g] =')) {
+                                let match = line.match(/=\s*([\d\.]+)/);
+                                if (match) usedFilament = parseFloat(match[1]);
+                            }
+                            if (line.includes('; paint_info = ')) {
+                                let match = line.match(/; paint_info = (\[.*\])/);
+                                if (match) {
+                                    try {
+                                        let jsonData = JSON.parse(match[1]);
+                                        if (Array.isArray(jsonData) && jsonData.length > 0) {
+                                            materialType = jsonData[0].material_type || 'Unknown';
+                                        }
+                                    } catch (e) {
+                                        console.warn("Fehler beim Parsen von paint_info JSON", e);
+                                    }
+                                }
+                            }
+                            if (line.includes('; print_time =')) {
+                                let match = line.match(/; print_time = (.*)/);
+                                if (match) printTimeString = match[1].trim();
+                            }
+                        });
+
+                        let timeData = printTimeString ? parsePrintTime(printTimeString) : { hours: 0, formatted: '0d 0h 0m 0s' };
+                        let printTimeHours = timeData.hours;
+
+                        let materialPrice = config[`material_price_per_kg_${materialType}`] || config['material_price_per_kg_default'] || 20.0;
+                        let materialCost = (usedFilament / 1000) * materialPrice;
+
+                        let timeCost = 0;
+                        if (printTimeHours <= 5) {
+                            timeCost = printTimeHours * (config.time_price_per_hour || 0);
+                        } else if (printTimeHours <= 10) {
+                            timeCost = printTimeHours * (config.time_price_per_hour5 || 0);
+                        } else {
+                            timeCost = printTimeHours * (config.time_price_per_hour10 || 0);
                         }
 
-                        // Filament
-                        const filamentMatch = content.match(/; total filament used \[g\] = (\d+\.\d+)/);
-                        if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
+                        let energyKWh = (250 * printTimeHours) / 1000;
+                        let energyCost = energyKWh * (config.energy_price_per_kwh || 0);
 
-                        // Druckzeit
-                        const timeMatch = content.match(/; print_time = ([\ddhms :]+)/);
-                        if (timeMatch) {
-                            const result = convertTimeToHMS(timeMatch[1]);
-                            printTimeStr = result.formatted;
-                            printHours = result.hours;
-                        }
-
-                        const materialKey = `material_price_per_kg_${materialType}`;
-                        const materialPrice = config[materialKey] || config.material_price_per_kg_default || 20.0;
-                        const materialCost = (usedFilament / 1000) * materialPrice;
-
-                        let timeRate = config.time_price_per_hour;
-                        if (printHours > 10) timeRate = config.time_price_per_hour10;
-                        else if (printHours > 5) timeRate = config.time_price_per_hour5;
-
-                        const timeCost = printHours * timeRate;
-                        const energyUsed = (250 * printHours) / 1000;
-                        const energyCost = energyUsed * config.energy_price_per_kwh;
-
-                        const totalCost = materialCost + timeCost + energyCost;
+                        let totalCost = materialCost + timeCost + energyCost;
 
                         outputHtml += `
                             <div>
@@ -184,21 +190,21 @@
                                 <p><strong>Materialtyp:</strong> ${materialType}</p>
                                 <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
                                 <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-                                <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
+                                <p><strong>Druckzeit:</strong> ${timeData.formatted}</p>
                                 <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
                                 <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
                                 <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
                                 <hr>
                             </div>
                         `;
+
                         outputDiv.innerHTML = outputHtml;
                     };
-
                     reader.readAsText(file);
                 });
             })
-            .catch(err => {
-                console.error('Fehler beim Laden der Konfiguration:', err);
+            .catch(error => {
+                console.error('Fehler beim Laden der Konfiguration:', error);
                 outputDiv.innerHTML = '<p class="error">Fehler beim Laden der Konfigurationsdatei.</p>';
             });
     });
