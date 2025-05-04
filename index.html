@@ -112,6 +112,7 @@
       font-size: 18px;
       transition: 0.4s;
       border-radius: 4px;
+      position: relative;
     }
 
     .active, .accordion:hover {
@@ -126,6 +127,20 @@
       border-left: 4px solid #4CAF50;
     }
 
+    .close-button {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #f44336;
+    }
+
+    .close-button:hover {
+      color: #d32f2f;
+    }
   </style>
 </head>
 <body>
@@ -156,6 +171,8 @@
     material_price_per_kg_ASA: 32.0,
     energy_price_per_kwh: 0.40
   };
+
+  let totalCost = 0; // Variable für Gesamtkosten
 
   function convertTimeToHours(timeStr) {
     const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
@@ -216,10 +233,11 @@
       const timeCost = calculateTimeCost(printTime);
       const energyConsumedKwh = (250 * printTime) / 1000;
       const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
-      const totalCost = materialCost + timeCost + energyCost;
+      const totalCostForFile = materialCost + timeCost + energyCost;
+      totalCost += totalCostForFile; // Gesamtkosten kumulieren
 
       const outputHtml = `
-        <button class="accordion">Ergebnisse für ${file.name}</button>
+        <button class="accordion">Ergebnisse für ${file.name} <button class="close-button" onclick="removeFile(this, ${totalCostForFile})">×</button></button>
         <div class="panel">
           <p><strong>Materialtyp:</strong> ${materialType}</p>
           <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
@@ -227,10 +245,11 @@
           <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
           <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
           <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-          <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+          <p><strong>Gesamtkosten für diese Datei:</strong> ${totalCostForFile.toFixed(2)} CHF</p>
         </div>
       `;
       document.getElementById('fileInfo').innerHTML += outputHtml;
+      document.getElementById('fileInfo').innerHTML += `<p><strong>Gesamtkosten für alle Dateien: ${totalCost.toFixed(2)} CHF</strong></p>`;
     };
     reader.readAsText(file);
   }
@@ -245,10 +264,11 @@
     }
   }
 
-  function clearOutput() {
-    document.getElementById('gcodeInput').value = '';
-    document.getElementById('fileInfo').innerHTML = '';
-    document.getElementById('clearContainer').innerHTML = '';
+  function removeFile(button, cost) {
+    const panel = button.closest('.accordion').nextElementSibling;
+    panel.style.display = 'none';
+    totalCost -= cost; // Gesamtkosten anpassen
+    document.getElementById('fileInfo').innerHTML += `<p><strong>Gesamtkosten für alle Dateien: ${totalCost.toFixed(2)} CHF</strong></p>`;
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
