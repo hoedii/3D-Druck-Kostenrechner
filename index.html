@@ -292,7 +292,7 @@
     const panel = button.closest('.panel');
     const fileCost = parseFloat(panel.querySelector('p strong:last-of-type').textContent.replace(' CHF', ''));
     totalCost -= fileCost;
-    panel.remove();
+    panel.closest('.accordion').remove();  // Entfernt den gesamten Abschnitt, einschließlich Button und Panel
     updateTotalCosts();
   }
 
