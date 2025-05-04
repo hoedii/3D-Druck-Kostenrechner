@@ -1,115 +1,148 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>3D-Druck Kostenrechner</title>
-  <style>
-    body { font-family: sans-serif; padding: 2rem; background: #f8f9fa; }
-    h1 { color: #333; }
-    input, button { padding: 0.5rem; margin: 0.5rem 0; }
-    #result { margin-top: 1rem; background: #fff; padding: 1rem; border-radius: 5px; box-shadow: 0 0 5px #ccc; }
-    pre { white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h1>🧾 3D-Druck Kostenrechner</h1>
-  <input type="file" id="gcodeInput" accept=".gcode" />
-  <button onclick="parseGCode()">Kosten berechnen</button>
-
-  <div id="result" style="display: none">
-    <h2>Ergebnis</h2>
-    <pre id="output"></pre>
-  </div>
-
-  <script>
-    const config = {
-      time_price_per_hour: 2.75,
-      time_price_per_hour5: 2.0,
-      time_price_per_hour10: 1.5,
-      energy_price_per_kwh: 0.40,
-      material_price_per_kg: {
-        PLA: 24.0,
-        ABS: 23.0,
-        TPU: 28.0,
-        PETG: 18.0,
-        ASA: 32.0,
-        default: 20.0
-      },
-      printer_power_watt: 250
-    };
-
-    function parseTime(str) {
-      const match = str.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-      if (!match) return 0;
-      const [_, d, h, m, s] = match.map(x => parseInt(x) || 0);
-      return d * 24 + h + m / 60 + s / 3600;
-    }
-
-    function parseGCode() {
-      const fileInput = document.getElementById('gcodeInput');
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = function () {
-        const lines = reader.result.split('\n');
-        let filament = 0;
-        let timeStr = '';
-        let material = 'Unknown';
-
-        for (const line of lines) {
-          if (line.includes('; total filament used [g]')) {
-            const match = line.match(/=\s*(\d+\.\d+)/);
-            if (match) filament = parseFloat(match[1]);
-          }
-          if (line.includes('; print_time')) {
-            const match = line.match(/=\s*([\ddhms\s]+)/);
-            if (match) timeStr = match[1].trim();
-          }
-          if (line.includes('; paint_info')) {
-            try {
-              const match = line.match(/=\s*(\[.*\])/);
-              if (match) {
-                const info = JSON.parse(match[1]);
-                if (Array.isArray(info) && info.length > 0) {
-                  material = info[0].material_type || 'Unknown';
-                }
-              }
-            } catch (e) {
-              console.warn('Fehler beim Parsen von paint_info:', e);
-            }
-          }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Druck Kostenrechner</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
         }
 
-        const timeHours = parseTime(timeStr);
-        const materialPrice = config.material_price_per_kg[material] || config.material_price_per_kg.default;
-        const materialCost = (filament / 1000) * materialPrice;
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
 
-        let timeRate = config.time_price_per_hour;
-        if (timeHours > 5 && timeHours <= 10) timeRate = config.time_price_per_hour5;
-        else if (timeHours > 10) timeRate = config.time_price_per_hour10;
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
 
-        const timeCost = timeHours * timeRate;
-        const energyKWh = (config.printer_power_watt * timeHours) / 1000;
-        const energyCost = energyKWh * config.energy_price_per_kwh;
-        const total = materialCost + timeCost + energyCost;
+        h2 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
 
-        const output = `Materialtyp: ${material}
-Verbrauchtes Filament: ${filament.toFixed(2)} g
-Druckzeit: ${timeHours.toFixed(2)} h (${timeStr})
+        input[type="file"] {
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            width: 100%;
+        }
 
-Materialkosten: ${materialCost.toFixed(2)} CHF
-Zeitkosten: ${timeCost.toFixed(2)} CHF
-Stromkosten: ${energyCost.toFixed(2)} CHF
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100%;
+        }
 
-Gesamtkosten: ${total.toFixed(2)} CHF`;
+        button:hover {
+            background-color: #45a049;
+        }
 
-        document.getElementById('output').textContent = output;
-        document.getElementById('result').style.display = 'block';
-      };
-      reader.readAsText(file);
-    }
-  </script>
+        .output {
+            margin-top: 20px;
+        }
+
+        .output p {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .result-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>3D Druck Kostenrechner</h1>
+</header>
+
+<div class="container">
+    <h2>GCode-Datei hochladen</h2>
+    <input type="file" id="gcodeInput" accept=".gcode" multiple>
+    <button id="processButton">Berechnen</button>
+
+    <div class="output" id="output"></div>
+</div>
+
+<script>
+    document.getElementById('processButton').addEventListener('click', function() {
+        const fileInput = document.getElementById('gcodeInput');
+        const outputDiv = document.getElementById('output');
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+            outputDiv.innerHTML = '<p class="error">Bitte wähle eine oder mehrere GCode-Dateien aus.</p>';
+            return;
+        }
+
+        // Lade die Konfigurationsdaten aus der JSON-Datei
+        fetch('kosten_config.json')
+            .then(response => response.json())
+            .then(config => {
+                let outputHtml = '<h3 class="result-header">Ergebnisse:</h3>';
+
+                // Beispielhafte Berechnungen für jede Datei (hier kannst du deine eigenen Berechnungen anpassen)
+                Array.from(files).forEach(file => {
+                    // Simulierte Werte für die Berechnung
+                    const usedFilament = 100; // Beispiel: 100g Filament
+                    const materialPrice = config.material_price_per_kg_PLA; // Beispiel: PLA Materialpreis
+                    const totalMaterialCost = (usedFilament / 1000) * materialPrice;
+
+                    const printTime = 5; // Beispiel: 5 Stunden Druckzeit
+                    const timeCost = printTime * config.time_price_per_hour;
+
+                    const energyConsumedKwh = (250 * printTime) / 1000; // Beispiel: Stromverbrauch bei 250W Drucker
+                    const energyCost = energyConsumedKwh * config.energy_price_per_kwh;
+
+                    const totalCost = totalMaterialCost + timeCost + energyCost;
+
+                    outputHtml += `
+                        <div>
+                            <p><strong>Datei:</strong> ${file.name}</p>
+                            <p><strong>Verwendetes Filament:</strong> ${usedFilament}g</p>
+                            <p><strong>Materialkosten:</strong> ${totalMaterialCost.toFixed(2)} CHF</p>
+                            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+                            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+                            <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+                            <hr>
+                        </div>
+                    `;
+                });
+
+                outputDiv.innerHTML = outputHtml;
+            })
+            .catch(error => {
+                console.error('Fehler beim Laden der Konfiguration:', error);
+                outputDiv.innerHTML = '<p class="error">Fehler beim Laden der Konfigurationsdatei.</p>';
+            });
+    });
+</script>
+
 </body>
 </html>
