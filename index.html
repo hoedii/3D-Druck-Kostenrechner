@@ -377,7 +377,7 @@
     document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
     document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
-    document.getElementById('totalCostContainer').style.display = 'block';
+    document.getElementById('totalCostContainer').style.display = allResults.length > 0 ? 'block' : 'none';
   }
 
   function deleteResult(button, fileName) {
