@@ -1,382 +1,222 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D Druck Kostenrechner</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3D-Druck Kostenberechnung</title>
   <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-    }
-
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-    }
-
-    header img {
-      height: 50px;
-    }
-
-    .container {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    h2 {
-      font-size: 24px;
-      margin-bottom: 15px;
-    }
-
-    input[type="file"] {
+    .panel {
+      display: none;
       padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%;
-    }
-
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 15px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      width: 100%;
+      background-color: #f1f1f1;
       margin-top: 10px;
     }
-
-    button:hover {
+    .accordion {
+      cursor: pointer;
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px;
+      width: 100%;
+      text-align: left;
+      border: none;
+      outline: none;
+      font-size: 15px;
+    }
+    .active, .accordion:hover {
       background-color: #45a049;
     }
-
-    .output {
-      margin-top: 20px;
+    .gcode-result {
+      margin-bottom: 10px;
     }
-
-    .output p {
-      font-size: 18px;
-      margin: 10px 0;
-    }
-
-    .error {
-      color: red;
-    }
-
-    .result-header {
-      font-size: 20px;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-
-    .clear-button {
-      background-color: #ccc;
-      color: #333;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-      width: auto;
-      margin: 20px 0 0 0;
-      display: inline-block;
-      cursor: pointer;
-    }
-
-    .clear-button:hover {
-      background-color: #bbb;
-    }
-
-    .accordion {
-      margin-top: 10px;
-      background-color: #f1f1f1;
-      color: #444;
-      cursor: pointer;
-      padding: 15px;
-      width: 100%;
-      border: none;
-      text-align: left;
-      outline: none;
-      font-size: 18px;
-      transition: 0.4s;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .active, .accordion:hover {
-      background-color: #ccc;
-    }
-
-    .panel {
-      padding: 0 18px;
-      display: none;
-      overflow: hidden;
-      background-color: #f7f7f7;
-      border-left: 4px solid #4CAF50;
-    }
-
     .delete-button {
       background-color: #ff4d4d;
       color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-
-    .delete-button:hover {
-      background-color: #e60000;
-    }
-
-    .total-costs {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: bold;
-      color: #fff;
-      padding: 15px;
-      background-color: #4CAF50;
-      border-radius: 8px;
-      text-align: center;
-    }
-
-    .total-costs p {
-      margin: 0;
-    }
-
-    .total-cost-container {
-      display: none; /* Initially hidden */
-      margin-top: 20px;
-      padding: 20px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: left; /* Left align */
-    }
-
-    .total-cost-container p {
-      font-size: 18px;
-      margin: 5px 0;
-    }
-
-    /* Button für alle Ergebnisse löschen linksbündig */
-    #clearAllButton {
-      background-color: transparent;
-      color: black;
-      padding: 0;
       border: none;
-      font-size: 16px;
+      padding: 5px;
       cursor: pointer;
-      display: block;
-      text-align: left;
-      width: 100%;
+    }
+    #totalCostContainer {
+      display: none;
       margin-top: 20px;
-      text-decoration: underline;
     }
-
-    .accordion::after {
-      content: " ▼";
-      font-size: 18px;
-    }
-
-    .active::after {
-      content: " ▲";
+    #clearAllButton {
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<header>
-  <img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" alt="Logo">
-  <h1>3D Druck Kostenrechner</h1>
-</header>
+  <h1>3D-Druck Kostenberechnung</h1>
 
-<div class="container">
-  <h2>GCode-Dateien hochladen</h2>
-  <input type="file" id="gcodeInput" accept=".gcode" multiple>
+  <input type="file" id="gcodeInput" multiple>
   <button id="processButton">Berechnen</button>
 
   <div id="fileInfo"></div>
-  
-  <!-- Der Text zum Löschen aller Ergebnisse -->
-  <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
-  
-  <!-- Die Gesamtkosten werden hier angezeigt -->
-  <div class="total-cost-container" id="totalCostContainer">
-    <h3>Gesamtkosten</h3>
-    <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
-    <p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
-    <p>Stromkosten: <span id="totalEnergyCost">0.00 CHF</span></p>
-    <p><strong>Total: <span id="totalCost">0.00 CHF</span></strong></p>
+
+  <div id="totalCostContainer">
+    <h3>Gesamtübersicht</h3>
+    <p><strong>Materialkosten:</strong> CHF <span id="totalMaterialCost">0.00</span></p>
+    <p><strong>Zeitkosten:</strong> CHF <span id="totalTimeCost">0.00</span></p>
+    <p><strong>Stromkosten:</strong> CHF <span id="totalEnergyCost">0.00</span></p>
+    <p><strong>Gesamtkosten:</strong> CHF <span id="totalCost">0.00</span></p>
+    <button id="clearAllButton">Alle Ergebnisse löschen</button>
   </div>
-</div>
 
-<script>
-  const costConfig = {
-    time_price_per_hour: 2.75,       // für unter 5 Stunden
-    time_price_per_hour5: 2,         // für über 5 Stunden
-    time_price_per_hour10: 1.5,      // für über 10 Stunden
-    material_price_per_kg_PLA: 24.0,
-    material_price_per_kg_ABS: 23.0,
-    material_price_per_kg_TPU: 28.0,
-    material_price_per_kg_PETG: 18.0,
-    material_price_per_kg_ASA: 32.0,
-    energy_price_per_kwh: 0.40
-  };
-
-  let totalMaterialCost = 0;
-  let totalTimeCost = 0;
-  let totalEnergyCost = 0;
-  let totalCost = 0;
-  let allResults = [];
-
-  function convertTimeToHours(timeStr) {
-    const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-    if (timeMatch) {
-      const days = parseInt(timeMatch[1] || 0, 10);
-      const hours = parseInt(timeMatch[2] || 0, 10);
-      const minutes = parseInt(timeMatch[3] || 0, 10);
-      const seconds = parseInt(timeMatch[4] || 0, 10);
-      return days * 24 + hours + minutes / 60 + seconds / 3600;
-    }
-    return 0;
-  }
-
-  function processGCodeFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const gcodeText = event.target.result;
-      let usedFilament = 0;
-      let printTime = 0;
-      let materialType = 'PLA';
-      let printTimeStr = '';
-
-      const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
-      if (materialMatch) {
-        try {
-          const materialInfo = JSON.parse(materialMatch[1]);
-          if (Array.isArray(materialInfo) && materialInfo.length > 0) {
-            materialType = materialInfo[0].material_type || 'PLA';
-          }
-        } catch (e) {
-          console.error('Fehler beim Parsen des Materialtyps:', e);
-        }
-      }
-
-      const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
-      if (filamentMatch) {
-        usedFilament = parseFloat(filamentMatch[1]);
-      }
-
-      const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-      const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
-      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
-
-      if (timeMatch1) {
-        printTimeStr = timeMatch1[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      } else if (timeMatch2) {
-        printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
-      } else if (timeMatch3) {
-        printTimeStr = timeMatch3[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      }
-
-      const materialPriceKey = `material_price_per_kg_${materialType}`;
-      const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
-      const materialCost = (usedFilament / 1000) * materialPrice;
-      const timeCost = calculateTimeCost(printTime);
-      const energyConsumedKwh = (250 * printTime) / 1000;
-      const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
-      const totalFileCost = materialCost + timeCost + energyCost;
-
-      allResults.push({
-        fileName: file.name,
-        materialCost,
-        timeCost,
-        energyCost,
-        totalFileCost,
-        materialType,
-        usedFilament
-      });
-
-      const outputHtml = `
-        <div class="gcode-result" id="gcode-${file.name}">
-          <div class="accordion">
-            <span>${file.name}</span>
-          </div>
-          <div class="panel">
-            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
-            <p><strong>Materialtyp:</strong> ${materialType}</p>
-            <p><strong>Verwendetes Material:</strong> ${usedFilament.toFixed(2)} g</p>
-            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
-          </div>
-        </div>
-      `;
-      document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-      updateTotalCosts();
+  <script>
+    const costConfig = {
+      time_price_per_hour: 2.75,       // für unter 5 Stunden
+      time_price_per_hour5: 2,         // für über 5 Stunden
+      time_price_per_hour10: 1.5,      // für über 10 Stunden
+      material_price_per_kg_PLA: 24.0,
+      material_price_per_kg_ABS: 23.0,
+      material_price_per_kg_TPU: 28.0,
+      material_price_per_kg_PETG: 18.0,
+      material_price_per_kg_ASA: 32.0,
+      energy_price_per_kwh: 0.40
     };
-    reader.readAsText(file);
-  }
 
-  function deleteResult(button, fileName) {
-    button.closest('.gcode-result').remove();
-    allResults = allResults.filter(result => result.fileName !== fileName);
-    updateTotalCosts();
-  }
+    let totalMaterialCost = 0;
+    let totalTimeCost = 0;
+    let totalEnergyCost = 0;
+    let totalCost = 0;
+    let allResults = [];
 
-  function updateTotalCosts() {
-    totalMaterialCost = allResults.reduce((sum, result) => sum + result.materialCost, 0);
-    totalTimeCost = allResults.reduce((sum, result) => sum + result.timeCost, 0);
-    totalEnergyCost = allResults.reduce((sum, result) => sum + result.energyCost, 0);
-    totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
-
-    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2);
-    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2);
-    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2);
-
-    if (allResults.length > 0) {
-      document.getElementById('clearAllButton').style.display = 'inline-block';
-      document.getElementById('totalCostContainer').style.display = 'block';
-    } else {
-      document.getElementById('clearAllButton').style.display = 'none';
-      document.getElementById('totalCostContainer').style.display = 'none';
+    function convertTimeToHours(timeStr) {
+      const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
+      if (timeMatch) {
+        const days = parseInt(timeMatch[1] || 0, 10);
+        const hours = parseInt(timeMatch[2] || 0, 10);
+        const minutes = parseInt(timeMatch[3] || 0, 10);
+        const seconds = parseInt(timeMatch[4] || 0, 10);
+        return days * 24 + hours + minutes / 60 + seconds / 3600;
+      }
+      return 0;
     }
-  }
 
-  document.getElementById('processButton').addEventListener('click', function() {
-    const files = document.getElementById('gcodeInput').files;
-    if (files.length > 0) {
-      Array.from(files).forEach(file => processGCodeFile(file));
+    function processGCodeFile(file) {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const gcodeText = event.target.result;
+        let usedFilament = 0;
+        let printTime = 0;
+        let materialType = 'PLA';
+        let printTimeStr = '';
+
+        const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+        if (materialMatch) {
+          try {
+            const materialInfo = JSON.parse(materialMatch[1]);
+            if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+              materialType = materialInfo[0].material_type || 'PLA';
+            }
+          } catch (e) {
+            console.error('Fehler beim Parsen des Materialtyps:', e);
+          }
+        }
+
+        const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
+        if (filamentMatch) {
+          usedFilament = parseFloat(filamentMatch[1]);
+        }
+
+        const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+        const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+        const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+
+        if (timeMatch1) {
+          printTimeStr = timeMatch1[1].trim();
+          printTime = convertTimeToHours(printTimeStr);
+        } else if (timeMatch2) {
+          printTime = parseInt(timeMatch2[1], 10) / 3600;
+          printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+        } else if (timeMatch3) {
+          printTimeStr = timeMatch3[1].trim();
+          printTime = convertTimeToHours(printTimeStr);
+        }
+
+        const materialPriceKey = `material_price_per_kg_${materialType}`;
+        const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
+        const materialCost = (usedFilament / 1000) * materialPrice;
+        const timeCost = calculateTimeCost(printTime);
+        const energyConsumedKwh = (250 * printTime) / 1000;
+        const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
+        const totalFileCost = materialCost + timeCost + energyCost;
+
+        allResults.push({
+          fileName: file.name,
+          materialCost,
+          timeCost,
+          energyCost,
+          totalFileCost,
+          materialType,
+          usedFilament
+        });
+
+        const outputHtml = `
+          <div class="gcode-result" id="gcode-${file.name}">
+            <div class="accordion">
+              <span>${file.name}</span>
+            </div>
+            <div class="panel">
+              <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+              <p><strong>Materialtyp:</strong> ${materialType}</p>
+              <p><strong>Verwendetes Material:</strong> ${usedFilament.toFixed(2)} g</p>
+              <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+              <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+              <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+              <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+              <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
+            </div>
+          </div>
+        `;
+        document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+        updateTotalCosts();
+      };
+      reader.readAsText(file);
     }
-  });
 
-  document.getElementById('clearAllButton').addEventListener('click', function() {
-    document.getElementById('fileInfo').innerHTML = '';
-    allResults = [];
-    updateTotalCosts();
-  });
-</script>
+    function deleteResult(button, fileName) {
+      button.closest('.gcode-result').remove();
+      allResults = allResults.filter(result => result.fileName !== fileName);
+      updateTotalCosts();
+    }
+
+    function updateTotalCosts() {
+      totalMaterialCost = allResults.reduce((sum, result) => sum + result.materialCost, 0);
+      totalTimeCost = allResults.reduce((sum, result) => sum + result.timeCost, 0);
+      totalEnergyCost = allResults.reduce((sum, result) => sum + result.energyCost, 0);
+      totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
+
+      document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2);
+      document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2);
+      document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
+      document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+
+      if (allResults.length > 0) {
+        document.getElementById('clearAllButton').style.display = 'inline-block';
+        document.getElementById('totalCostContainer').style.display = 'block';
+      } else {
+        document.getElementById('clearAllButton').style.display = 'none';
+        document.getElementById('totalCostContainer').style.display = 'none';
+      }
+    }
+
+    // Event listener für den Berechnen-Button
+    document.getElementById('processButton').addEventListener('click', function() {
+      const files = document.getElementById('gcodeInput').files;
+      if (files.length > 0) {
+        Array.from(files).forEach(file => processGCodeFile(file));
+      } else {
+        alert('Bitte wählen Sie mindestens eine GCode-Datei aus.');
+      }
+    });
+
+    document.getElementById('clearAllButton').addEventListener('click', function() {
+      document.getElementById('fileInfo').innerHTML = '';
+      allResults = [];
+      updateTotalCosts();
+    });
+  </script>
 
 </body>
 </html>
