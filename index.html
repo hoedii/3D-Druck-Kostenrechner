@@ -337,9 +337,9 @@
     if (timeInHours <= 5) {
       return timeInHours * costConfig.time_price_per_hour;
     } else if (timeInHours <= 10) {
-      return timeInHours * costConfig.time_price_per_hour10;
-    } else {
       return timeInHours * costConfig.time_price_per_hour5;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour10;
     }
   }
 
@@ -367,6 +367,9 @@
 
     if (allResults.length === 0) {
       document.getElementById('totalCostContainer').style.display = 'none';
+    } else {
+      document.getElementById('totalCostContainer').style.display = 'block';
+      document.getElementById('clearAllButton').style.display = 'inline-block';
     }
   }
 
