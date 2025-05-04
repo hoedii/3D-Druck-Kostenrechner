@@ -169,6 +169,21 @@
       font-size: 18px;
       margin: 5px 0;
     }
+
+    .clear-all-button {
+      background-color: #ffcc00;
+      color: #fff;
+      padding: 10px 15px;
+      border-radius: 4px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      width: 100%;
+    }
+
+    .clear-all-button:hover {
+      background-color: #e6b800;
+    }
   </style>
 </head>
 <body>
@@ -184,7 +199,9 @@
   <button id="processButton">Berechnen</button>
 
   <div id="fileInfo"></div>
-  <div id="clearContainer"></div>
+  
+  <!-- Button zum Löschen aller Ergebnisse -->
+  <button class="clear-all-button" id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
   
   <!-- Die Gesamtkosten werden hier angezeigt -->
   <div class="total-cost-container" id="totalCostContainer">
@@ -303,6 +320,7 @@
       updateTotalCosts();
       document.getElementById('totalCostContainer').style.display = 'block'; // Show total cost container
       addAccordionListeners();
+      document.getElementById('clearAllButton').style.display = 'block'; // Show clear all button
     };
     reader.readAsText(file);
   }
@@ -335,6 +353,10 @@
       allResults = allResults.filter(result => result.fileName !== fileName);
       updateTotalCosts();
     }
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none';
+      document.getElementById('clearAllButton').style.display = 'none';
+    }
   }
 
   function updateTotalCosts() {
@@ -349,6 +371,14 @@
     document.getElementById('totalCost').textContent = `${totalCost.toFixed(2)} CHF`;
   }
 
+  function clearAllResults() {
+    allResults = [];
+    document.getElementById('fileInfo').innerHTML = '';
+    updateTotalCosts();
+    document.getElementById('totalCostContainer').style.display = 'none';
+    document.getElementById('clearAllButton').style.display = 'none';
+  }
+
   document.getElementById('processButton').addEventListener('click', function() {
     const files = document.getElementById('gcodeInput').files;
     if (files.length > 0) {
@@ -357,6 +387,8 @@
       alert("Bitte eine GCode-Datei hochladen.");
     }
   });
+
+  document.getElementById('clearAllButton').addEventListener('click', clearAllResults);
 </script>
 
 </body>
