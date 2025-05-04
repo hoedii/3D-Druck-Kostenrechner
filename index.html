@@ -302,8 +302,20 @@
       document.getElementById('fileInfo').innerHTML += outputHtml;
       updateTotalCosts();
       document.getElementById('totalCostContainer').style.display = 'block'; // Show total cost container
+      addAccordionListeners();
     };
     reader.readAsText(file);
+  }
+
+  function addAccordionListeners() {
+    const accordions = document.querySelectorAll('.accordion');
+    accordions.forEach((accordion) => {
+      accordion.addEventListener('click', function() {
+        this.classList.toggle('active');
+        const panel = this.nextElementSibling;
+        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+      });
+    });
   }
 
   function calculateTimeCost(timeInHours) {
@@ -329,23 +341,20 @@
       totalCost += result.totalFileCost;
     });
 
-    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
-    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
-    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
+    document.getElementById('totalMaterialCost').textContent = `${totalMaterialCost.toFixed(2)} CHF`;
+    document.getElementById('totalTimeCost').textContent = `${totalTimeCost.toFixed(2)} CHF`;
+    document.getElementById('totalEnergyCost').textContent = `${totalEnergyCost.toFixed(2)} CHF`;
+    document.getElementById('totalCost').textContent = `${totalCost.toFixed(2)} CHF`;
   }
 
   function deleteResult(button, fileName) {
     const resultElement = document.getElementById(`gcode-${fileName}`);
-    if (resultElement) {
-      resultElement.remove();
-    }
-
+    resultElement.remove();
     allResults = allResults.filter(result => result.fileName !== fileName);
-    updateTotalCosts(); // Update the total costs after removal
+    updateTotalCosts();
 
     if (allResults.length === 0) {
-      document.getElementById('totalCostContainer').style.display = 'none'; // Hide if no results
+      document.getElementById('totalCostContainer').style.display = 'none';
     }
   }
 
@@ -356,19 +365,11 @@
       return;
     }
 
-    document.getElementById('fileInfo').innerHTML = ''; 
+    document.getElementById('fileInfo').innerHTML = '';
+    allResults = [];
     for (let file of gcodeFiles) {
       processGCodeFile(file);
     }
-  });
-
-  const accordions = document.querySelectorAll('.accordion');
-  accordions.forEach((accordion) => {
-    accordion.addEventListener('click', function() {
-      this.classList.toggle('active');
-      const panel = this.nextElementSibling;
-      panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-    });
   });
 </script>
 
