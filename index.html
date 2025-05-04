@@ -146,9 +146,9 @@
 
 <script>
   const costConfig = {
-    time_price_per_hour: 2.75,
-    time_price_per_hour5: 2,
-    time_price_per_hour10: 1.5,
+    time_price_per_hour: 2.75,       // für Zeit unter 5 Stunden
+    time_price_per_hour5: 2,         // für Zeit zwischen 5 und 10 Stunden
+    time_price_per_hour10: 1.5,      // für Zeit über 10 Stunden
     material_price_per_kg_PLA: 24.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
@@ -237,11 +237,11 @@
 
   function calculateTimeCost(timeInHours) {
     if (timeInHours <= 5) {
-      return timeInHours * costConfig.time_price_per_hour5;
-    } else if (timeInHours <= 10) {
-      return timeInHours * costConfig.time_price_per_hour10;
-    } else {
       return timeInHours * costConfig.time_price_per_hour;
+    } else if (timeInHours <= 10) {
+      return timeInHours * costConfig.time_price_per_hour5;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour10;
     }
   }
 
