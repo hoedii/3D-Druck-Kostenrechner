@@ -17,6 +17,14 @@
             color: white;
             padding: 20px;
             text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        header img {
+            height: 50px; /* Logo-Größe anpassen */
+            margin-right: 20px;
         }
 
         .container {
@@ -79,6 +87,7 @@
 <body>
 
 <header>
+    <img src="https://github.com/hoedii/3D-Druck-Kostenrechner/blob/main/logo.png?raw=true" alt="Logo">
     <h1>3D Druck Kostenrechner</h1>
 </header>
 
@@ -91,27 +100,6 @@
 </div>
 
 <script>
-    // Funktion, um die Druckzeit zu konvertieren
-    function convertTimeToHours(timeStr) {
-        const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-
-        if (timeMatch) {
-            const days = timeMatch[1] ? parseInt(timeMatch[1]) : 0;
-            const hours = timeMatch[2] ? parseInt(timeMatch[2]) : 0;
-            const minutes = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
-            const seconds = timeMatch[4] ? parseInt(timeMatch[4]) : 0;
-
-            const totalHours = days * 24 + hours + minutes / 60 + seconds / 3600;
-
-            return {
-                totalHours: totalHours,
-                formatted: `${days}d ${hours}h ${minutes}m ${seconds}s`
-            };
-        }
-
-        return { totalHours: 0, formatted: "0d 0h 0m 0s" };  // Standardwert für den Fall, dass keine Zeit gefunden wurde
-    }
-
     document.getElementById('processButton').addEventListener('click', function() {
         const fileInput = document.getElementById('gcodeInput');
         const outputDiv = document.getElementById('output');
@@ -128,74 +116,35 @@
             .then(config => {
                 let outputHtml = '<h3 class="result-header">Ergebnisse:</h3>';
 
+                // Beispielhafte Berechnungen für jede Datei (hier kannst du deine eigenen Berechnungen anpassen)
                 Array.from(files).forEach(file => {
-                    const reader = new FileReader();
+                    // Simulierte Werte für die Berechnung
+                    const usedFilament = 100; // Beispiel: 100g Filament
+                    const materialPrice = config.material_price_per_kg_PLA; // Beispiel: PLA Materialpreis
+                    const totalMaterialCost = (usedFilament / 1000) * materialPrice;
 
-                    reader.onload = function(e) {
-                        const fileContent = e.target.result;
+                    const printTime = 5; // Beispiel: 5 Stunden Druckzeit
+                    const timeCost = printTime * config.time_price_per_hour;
 
-                        // Zeit, Material und andere Informationen aus dem GCode extrahieren
-                        const filamentMatch = fileContent.match(/; total filament used \[g\] = (\d+\.\d+)/);
-                        const timeMatch = fileContent.match(/; print_time = ([\ddhms ]+)/);
-                        const materialMatch = fileContent.match(/; paint_info = (\[.*\])/);
+                    const energyConsumedKwh = (250 * printTime) / 1000; // Beispiel: Stromverbrauch bei 250W Drucker
+                    const energyCost = energyConsumedKwh * config.energy_price_per_kwh;
 
-                        let usedFilament = filamentMatch ? parseFloat(filamentMatch[1]) : 0;
-                        let printTimeStr = timeMatch ? timeMatch[1].trim() : "0d 0h 0m 0s";
-                        let materialType = 'Unknown';
+                    const totalCost = totalMaterialCost + timeCost + energyCost;
 
-                        // Materialtyp extrahieren
-                        if (materialMatch) {
-                            try {
-                                const materialInfo = JSON.parse(materialMatch[1]);
-                                if (materialInfo.length > 0) {
-                                    materialType = materialInfo[0].material_type || 'Unknown';
-                                }
-                            } catch (error) {
-                                console.log("Fehler beim Parsen des Materialtyps.");
-                            }
-                        }
-
-                        // Falls der Materialtyp noch immer 'Unknown' ist, Standardwert setzen
-                        if (materialType === 'Unknown') {
-                            materialType = 'PLA';  // Standardwert falls kein Materialtyp gefunden wird
-                        }
-
-                        const { totalHours, formatted } = convertTimeToHours(printTimeStr);
-                        const materialPrice = config[`material_price_per_kg_${materialType.toLowerCase()}`] || config.material_price_per_kg_default;
-
-                        // Wenn der Materialpreis nicht gefunden wird, Fehler anzeigen
-                        if (!materialPrice) {
-                            outputHtml += `<p class="error">Kein Preis für Materialtyp ${materialType} gefunden.</p>`;
-                            return;
-                        }
-
-                        const materialCost = (usedFilament / 1000) * materialPrice;
-
-                        const timeCost = totalHours * config.time_price_per_hour;
-                        const energyConsumedKwh = (250 * totalHours) / 1000; // 250W Drucker
-                        const energyCost = energyConsumedKwh * config.energy_price_per_kwh;
-
-                        const totalCost = materialCost + timeCost + energyCost;
-
-                        outputHtml += `
-                            <div>
-                                <p><strong>Datei:</strong> ${file.name}</p>
-                                <p><strong>Materialtyp:</strong> ${materialType}</p>
-                                <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-                                <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-                                <p><strong>Druckzeit:</strong> ${formatted}</p>
-                                <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-                                <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-                                <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
-                                <hr>
-                            </div>
-                        `;
-
-                        outputDiv.innerHTML = outputHtml;
-                    };
-
-                    reader.readAsText(file);
+                    outputHtml += ` 
+                        <div>
+                            <p><strong>Datei:</strong> ${file.name}</p>
+                            <p><strong>Verwendetes Filament:</strong> ${usedFilament}g</p>
+                            <p><strong>Materialkosten:</strong> ${totalMaterialCost.toFixed(2)} CHF</p>
+                            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+                            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+                            <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+                            <hr>
+                        </div>
+                    `;
                 });
+
+                outputDiv.innerHTML = outputHtml;
             })
             .catch(error => {
                 console.error('Fehler beim Laden der Konfiguration:', error);
