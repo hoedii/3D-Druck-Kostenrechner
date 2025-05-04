@@ -99,9 +99,33 @@
       background-color: #bbb;
     }
 
-    #summaryBox.hidden {
-      display: none;
+    .accordion {
+      margin-top: 10px;
+      background-color: #f1f1f1;
+      color: #444;
+      cursor: pointer;
+      padding: 15px;
+      width: 100%;
+      border: none;
+      text-align: left;
+      outline: none;
+      font-size: 18px;
+      transition: 0.4s;
+      border-radius: 4px;
     }
+
+    .active, .accordion:hover {
+      background-color: #ccc;
+    }
+
+    .panel {
+      padding: 0 18px;
+      display: none;
+      overflow: hidden;
+      background-color: #f7f7f7;
+      border-left: 4px solid #4CAF50;
+    }
+
   </style>
 </head>
 <body>
@@ -115,8 +139,8 @@
   <h2>GCode-Dateien hochladen</h2>
   <input type="file" id="gcodeInput" accept=".gcode" multiple>
   <button id="processButton">Berechnen</button>
+
   <div id="fileInfo"></div>
-  <div id="summaryBox" class="hidden"></div>
   <div id="clearContainer"></div>
 </div>
 
@@ -134,118 +158,118 @@
   };
 
   function convertTimeToHours(timeStr) {
-    const match = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-    if (!match) return 0;
-    const [, d, h, m, s] = match.map(v => parseInt(v || 0));
-    return d * 24 + h + m / 60 + s / 3600;
+    const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
+    if (timeMatch) {
+      const days = parseInt(timeMatch[1] || 0, 10);
+      const hours = parseInt(timeMatch[2] || 0, 10);
+      const minutes = parseInt(timeMatch[3] || 0, 10);
+      const seconds = parseInt(timeMatch[4] || 0, 10);
+      return days * 24 + hours + minutes / 60 + seconds / 3600;
+    }
+    return 0;
   }
 
-  function getTimeRate(hours, config) {
-    if (hours <= 5) return config.time_price_per_hour5 || config.time_price_per_hour;
-    if (hours <= 10) return config.time_price_per_hour10 || config.time_price_per_hour;
-    return config.time_price_per_hour;
+  function processGCodeFile(file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const gcodeText = event.target.result;
+      let usedFilament = 0;
+      let printTime = 0;
+      let materialType = 'PLA';
+      let printTimeStr = '';
+
+      const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+      if (materialMatch) {
+        try {
+          const materialInfo = JSON.parse(materialMatch[1]);
+          if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+            materialType = materialInfo[0].material_type || 'PLA';
+          }
+        } catch (e) {
+          console.error('Fehler beim Parsen des Materialtyps:', e);
+        }
+      }
+
+      const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
+      if (filamentMatch) {
+        usedFilament = parseFloat(filamentMatch[1]);
+      }
+
+      const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+      const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+
+      if (timeMatch1) {
+        printTimeStr = timeMatch1[1].trim();
+        printTime = convertTimeToHours(printTimeStr);
+      } else if (timeMatch2) {
+        printTime = parseInt(timeMatch2[1], 10) / 3600;
+        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+      } else if (timeMatch3) {
+        printTimeStr = timeMatch3[1].trim();
+        printTime = convertTimeToHours(printTimeStr);
+      }
+
+      const materialPriceKey = `material_price_per_kg_${materialType}`;
+      const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
+      const materialCost = (usedFilament / 1000) * materialPrice;
+      const timeCost = calculateTimeCost(printTime);
+      const energyConsumedKwh = (250 * printTime) / 1000;
+      const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
+      const totalCost = materialCost + timeCost + energyCost;
+
+      const outputHtml = `
+        <button class="accordion">Ergebnisse für ${file.name}</button>
+        <div class="panel">
+          <p><strong>Materialtyp:</strong> ${materialType}</p>
+          <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
+          <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+          <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
+          <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+          <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+          <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+        </div>
+      `;
+      document.getElementById('fileInfo').innerHTML += outputHtml;
+    };
+    reader.readAsText(file);
   }
 
-  function processGCodeFiles(files) {
-    let summaryMaterial = 0, summaryTime = 0, summaryEnergy = 0, summaryTotal = 0;
-    let resultHTML = '';
-
-    [...files].forEach(file => {
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        const gcode = event.target.result;
-        let materialType = 'PLA';
-        let usedFilament = 0;
-        let printTime = 0;
-        let printTimeStr = '';
-
-        const materialMatch = gcode.match(/; paint_info = (\[.*\])/);
-        if (materialMatch) {
-          try {
-            const materialInfo = JSON.parse(materialMatch[1]);
-            if (Array.isArray(materialInfo) && materialInfo[0]) {
-              materialType = materialInfo[0].material_type || 'PLA';
-            }
-          } catch (e) {}
-        }
-
-        const filamentMatch = gcode.match(/; total filament used \[g\] = (\d+\.\d+)/);
-        if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
-
-        const timeMatch1 = gcode.match(/; print_time = ([\ddhms\s]+)/);
-        const timeMatch2 = gcode.match(/;TIME:(\d+)/);
-        const timeMatch3 = gcode.match(/; estimated printing time.*?= ([\ddhms\s]+)/i);
-
-        if (timeMatch1) {
-          printTimeStr = timeMatch1[1].trim();
-          printTime = convertTimeToHours(printTimeStr);
-        } else if (timeMatch2) {
-          printTime = parseInt(timeMatch2[1]) / 3600;
-          printTimeStr = `${Math.round(printTime * 60)} Minuten`;
-        } else if (timeMatch3) {
-          printTimeStr = timeMatch3[1].trim();
-          printTime = convertTimeToHours(printTimeStr);
-        }
-
-        const matKey = `material_price_per_kg_${materialType}`;
-        const matPrice = costConfig[matKey] || costConfig.material_price_per_kg_PLA;
-        const matCost = (usedFilament / 1000) * matPrice;
-        const timeRate = getTimeRate(printTime, costConfig);
-        const timeCost = printTime * timeRate;
-        const energyKwh = (250 * printTime) / 1000;
-        const energyCost = energyKwh * costConfig.energy_price_per_kwh;
-        const total = matCost + timeCost + energyCost;
-
-        summaryMaterial += matCost;
-        summaryTime += timeCost;
-        summaryEnergy += energyCost;
-        summaryTotal += total;
-
-        resultHTML += `
-          <div class="output">
-            <h3 class="result-header">Ergebnisse für: ${file.name}</h3>
-            <p><strong>Materialtyp:</strong> ${materialType}</p>
-            <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
-            <p><strong>Materialkosten:</strong> ${matCost.toFixed(2)} CHF</p>
-            <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
-            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-            <p><strong>Gesamtkosten:</strong> ${total.toFixed(2)} CHF</p>
-          </div>
-        `;
-
-        document.getElementById('fileInfo').innerHTML = resultHTML;
-        document.getElementById('summaryBox').classList.remove('hidden');
-        document.getElementById('summaryBox').innerHTML = `
-          <h3 class="result-header">Gesamtübersicht:</h3>
-          <p><strong>Materialkosten gesamt:</strong> ${summaryMaterial.toFixed(2)} CHF</p>
-          <p><strong>Zeitkosten gesamt:</strong> ${summaryTime.toFixed(2)} CHF</p>
-          <p><strong>Stromkosten gesamt:</strong> ${summaryEnergy.toFixed(2)} CHF</p>
-          <p><strong>Gesamtkosten aller Dateien:</strong> ${summaryTotal.toFixed(2)} CHF</p>
-        `;
-
-        document.getElementById('clearContainer').innerHTML = `
-          <button class="clear-button" onclick="clearOutput()">Ergebnisse zurücksetzen</button>
-        `;
-      };
-      reader.readAsText(file);
-    });
+  function calculateTimeCost(timeInHours) {
+    if (timeInHours <= 5) {
+      return timeInHours * costConfig.time_price_per_hour5;
+    } else if (timeInHours <= 10) {
+      return timeInHours * costConfig.time_price_per_hour10;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour;
+    }
   }
 
   function clearOutput() {
     document.getElementById('gcodeInput').value = '';
     document.getElementById('fileInfo').innerHTML = '';
-    document.getElementById('summaryBox').innerHTML = '';
-    document.getElementById('summaryBox').classList.add('hidden');
     document.getElementById('clearContainer').innerHTML = '';
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
-    const files = document.getElementById('gcodeInput').files;
+    const fileInput = document.getElementById('gcodeInput');
+    const files = fileInput.files;
     if (files.length > 0) {
-      processGCodeFiles(files);
+      Array.from(files).forEach(file => processGCodeFile(file));
     } else {
       document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle eine oder mehrere GCode-Dateien aus.</p>';
+    }
+  });
+
+  document.getElementById('fileInfo').addEventListener('click', function(e) {
+    if (e.target && e.target.classList.contains('accordion')) {
+      e.target.classList.toggle('active');
+      const panel = e.target.nextElementSibling;
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+      } else {
+        panel.style.display = 'block';
+      }
     }
   });
 </script>
