@@ -159,13 +159,13 @@
     }
 
     .total-cost-container {
-      display: none;
+      display: none; /* Initially hidden */
       margin-top: 20px;
       padding: 20px;
       background-color: #f9f9f9;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: left;
+      text-align: left; /* Left align */
     }
 
     .total-cost-container p {
@@ -173,6 +173,7 @@
       margin: 5px 0;
     }
 
+    /* Button für alle Ergebnisse löschen linksbündig */
     #clearAllButton {
       background-color: transparent;
       color: black;
@@ -211,8 +212,10 @@
 
   <div id="fileInfo"></div>
   
+  <!-- Der Text zum Löschen aller Ergebnisse -->
   <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
   
+  <!-- Die Gesamtkosten werden hier angezeigt -->
   <div class="total-cost-container" id="totalCostContainer">
     <h3>Gesamtkosten</h3>
     <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
@@ -224,9 +227,9 @@
 
 <script>
   const costConfig = {
-    time_price_per_hour: 2.75,
-    time_price_per_hour5: 2,
-    time_price_per_hour10: 1.5,
+    time_price_per_hour: 2.75,       // für unter 5 Stunden
+    time_price_per_hour5: 2,         // für über 5 Stunden
+    time_price_per_hour10: 1.5,      // für über 10 Stunden
     material_price_per_kg_PLA: 24.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
@@ -300,103 +303,108 @@
       const timeCost = calculateTimeCost(printTime);
       const energyConsumedKwh = (250 * printTime) / 1000;
       const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
+      const totalFileCost = materialCost + timeCost + energyCost;
 
-      totalMaterialCost += materialCost;
-      totalTimeCost += timeCost;
-      totalEnergyCost += energyCost;
+      allResults.push({
+        fileName: file.name,
+        materialCost,
+        timeCost,
+        energyCost,
+        totalFileCost
+      });
 
-      totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
+      const outputHtml = `
+        <div class="gcode-result" id="gcode-${file.name}">
+          <div class="accordion">
+            <span>${file.name}</span>
+          </div>
+          <div class="panel">
+            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+      updateTotalCosts();
 
-      allResults.push({ materialCost, timeCost, energyCost, totalCost, printTime, materialType, usedFilament, timeStr: printTimeStr });
-
-      displayResults();
+      const acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+          if (panel.style.display === "block") {
+            panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+          }
+        });
+      }
     };
-
     reader.readAsText(file);
   }
 
-  function calculateTimeCost(hours) {
-    if (hours <= 5) {
-      return hours * costConfig.time_price_per_hour5;
-    } else if (hours <= 10) {
-      return hours * costConfig.time_price_per_hour10;
+  function calculateTimeCost(timeInHours) {
+    if (timeInHours <= 5) {
+      return timeInHours * costConfig.time_price_per_hour;
+    } else if (timeInHours <= 10) {
+      return timeInHours * costConfig.time_price_per_hour5;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour10;
     }
-    return hours * costConfig.time_price_per_hour;
   }
 
-  function displayResults() {
-    const fileInfo = document.getElementById('fileInfo');
-    fileInfo.innerHTML = '';
-
-    allResults.forEach((result, index) => {
-      const resultDiv = document.createElement('div');
-      resultDiv.className = 'accordion';
-
-      const resultDetails = `
-        Material: ${result.materialType}<br>
-        Filament: ${result.usedFilament.toFixed(2)}g<br>
-        Druckzeit: ${result.timeStr}<br>
-        Materialkosten: CHF ${result.materialCost.toFixed(2)}<br>
-        Zeitkosten: CHF ${result.timeCost.toFixed(2)}<br>
-        Stromkosten: CHF ${result.energyCost.toFixed(2)}<br>
-        Gesamtkosten: CHF ${result.totalCost.toFixed(2)}
-      `;
-
-      resultDiv.innerHTML = `
-        <span>Druckauftrag ${index + 1}</span>
-        <span>Details</span>
-        <div class="panel">${resultDetails}</div>
-      `;
-
-      resultDiv.addEventListener('click', () => {
-        resultDiv.classList.toggle('active');
-        const panel = resultDiv.querySelector('.panel');
-        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-      });
-
-      const deleteButton = document.createElement('button');
-      deleteButton.className = 'delete-button';
-      deleteButton.textContent = 'Löschen';
-      deleteButton.onclick = function() {
-        allResults.splice(index, 1);
-        totalMaterialCost -= result.materialCost;
-        totalTimeCost -= result.timeCost;
-        totalEnergyCost -= result.energyCost;
-        displayResults();
-      };
-
-      resultDiv.appendChild(deleteButton);
-      fileInfo.appendChild(resultDiv);
-    });
-
-    const totalCostContainer = document.getElementById('totalCostContainer');
-    totalCostContainer.style.display = 'block';
-    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
-    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
-    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
-    document.getElementById('clearAllButton').style.display = 'inline-block';
+  function deleteResult(button, fileName) {
+    const resultElement = document.getElementById(`gcode-${fileName}`);
+    resultElement.remove();
+    allResults = allResults.filter(result => result.fileName !== fileName);
+    updateTotalCosts();
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none';
+      document.getElementById('clearAllButton').style.display = 'none';
+    }
   }
 
-  document.getElementById('processButton').addEventListener('click', () => {
-    const gcodeInput = document.getElementById('gcodeInput');
-    if (gcodeInput.files.length > 0) {
-      for (const file of gcodeInput.files) {
-        processGCodeFile(file);
-      }
-    }
-  });
+  function updateTotalCosts() {
+    totalMaterialCost = allResults.reduce((sum, result) => sum + result.materialCost, 0);
+    totalTimeCost = allResults.reduce((sum, result) => sum + result.timeCost, 0);
+    totalEnergyCost = allResults.reduce((sum, result) => sum + result.energyCost, 0);
+    totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
 
-  document.getElementById('clearAllButton').addEventListener('click', () => {
+    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2);
+    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2);
+    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
+    document.getElementById('totalCost').textContent = totalCost.toFixed(2);
+
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none';
+    } else {
+      document.getElementById('totalCostContainer').style.display = 'block';
+      document.getElementById('clearAllButton').style.display = 'inline-block';
+    }
+  }
+
+  function clearAllResults() {
     allResults = [];
-    totalMaterialCost = 0;
-    totalTimeCost = 0;
-    totalEnergyCost = 0;
-    totalCost = 0;
     document.getElementById('fileInfo').innerHTML = '';
-    document.getElementById('totalCostContainer').style.display = 'none';
     document.getElementById('clearAllButton').style.display = 'none';
+    document.getElementById('totalCostContainer').style.display = 'none';
+  }
+
+  document.getElementById('processButton').addEventListener('click', function() {
+    const files = document.getElementById('gcodeInput').files;
+    if (files.length > 0) {
+      Array.from(files).forEach(file => processGCodeFile(file));
+    } else {
+      alert("Bitte eine GCode-Datei hochladen.");
+    }
   });
+
+  document.getElementById('clearAllButton').addEventListener('click', clearAllResults);
 </script>
+
 </body>
 </html>
