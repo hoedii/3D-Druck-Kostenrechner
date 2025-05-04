@@ -315,13 +315,14 @@
 
       const outputHtml = `
         <div class="gcode-result" id="gcode-${file.name}">
-          <button class="accordion">Ergebnisse für ${file.name}</button>
+          <div class="accordion">
+            <span>${file.name}</span>
+          </div>
           <div class="panel">
-            <p><strong>Materialtyp:</strong> ${materialType}</p>
-            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr} (Kosten: ${timeCost.toFixed(2)} CHF)</p>
-            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
             <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
             <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
             <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
