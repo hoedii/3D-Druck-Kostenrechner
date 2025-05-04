@@ -288,7 +288,15 @@
           break;
       }
 
-      const timeCost = printTime * costConfig.time_price_per_hour;
+      // Anwendung der unterschiedlichen Zeitkosten
+      let timeCost = 0;
+      if (printTime <= 5) {
+        timeCost = printTime * costConfig.time_price_per_hour;
+      } else if (printTime <= 10) {
+        timeCost = printTime * costConfig.time_price_per_hour5;
+      } else {
+        timeCost = printTime * costConfig.time_price_per_hour10;
+      }
 
       const energyCost = printTime * costConfig.energy_price_per_kwh;
 
@@ -343,14 +351,6 @@
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + " CHF";
     document.getElementById('totalCost').textContent = totalCost.toFixed(2) + " CHF";
     document.getElementById('totalCostContainer').style.display = 'block';
-
-    const accordions = document.querySelectorAll('.accordion');
-    accordions.forEach((accordion, index) => {
-      accordion.addEventListener('click', function() {
-        const panel = accordion.nextElementSibling;
-        panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-      });
-    });
   }
 
   function removeResult(fileName) {
@@ -361,14 +361,25 @@
   document.getElementById('processButton').addEventListener('click', function() {
     const gcodeFiles = document.getElementById('gcodeInput').files;
     if (gcodeFiles.length === 0) {
-      alert('Bitte wählen Sie eine GCode-Datei aus.');
-      return;
-    }
-
-    for (let file of gcodeFiles) {
-      processGCodeFile(file);  
+      alert('Bitte GCode-Dateien hochladen.');
+    } else {
+      allResults = [];
+      Array.from(gcodeFiles).forEach(processGCodeFile);
     }
   });
+
+  document.querySelectorAll('.accordion').forEach(function(accordion) {
+    accordion.addEventListener('click', function() {
+      this.classList.toggle('active');
+      const panel = this.nextElementSibling;
+      if (panel.style.display === 'block') {
+        panel.style.display = 'none';
+      } else {
+        panel.style.display = 'block';
+      }
+    });
+  });
 </script>
+
 </body>
 </html>
