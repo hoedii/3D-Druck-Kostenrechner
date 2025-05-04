@@ -322,13 +322,26 @@
             <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr} (Kosten: ${timeCost.toFixed(2)} CHF)</p>
             <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
             <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-            <p><strong>Gesamtkosten für dieses File:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
             <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
         </div>
       `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
+
+      const acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+          if (panel.style.display === "block") {
+            panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+          }
+        });
+      }
     };
     reader.readAsText(file);
   }
