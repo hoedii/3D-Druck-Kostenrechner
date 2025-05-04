@@ -143,6 +143,7 @@
                         let printTimeStr = timeMatch ? timeMatch[1].trim() : "0d 0h 0m 0s";
                         let materialType = 'Unknown';
 
+                        // Materialtyp extrahieren
                         if (materialMatch) {
                             try {
                                 const materialInfo = JSON.parse(materialMatch[1]);
@@ -154,8 +155,20 @@
                             }
                         }
 
+                        // Falls der Materialtyp noch immer 'Unknown' ist, Standardwert setzen
+                        if (materialType === 'Unknown') {
+                            materialType = 'PLA';  // Standardwert falls kein Materialtyp gefunden wird
+                        }
+
                         const { totalHours, formatted } = convertTimeToHours(printTimeStr);
                         const materialPrice = config[`material_price_per_kg_${materialType.toLowerCase()}`] || config.material_price_per_kg_default;
+
+                        // Wenn der Materialpreis nicht gefunden wird, Fehler anzeigen
+                        if (!materialPrice) {
+                            outputHtml += `<p class="error">Kein Preis für Materialtyp ${materialType} gefunden.</p>`;
+                            return;
+                        }
+
                         const materialCost = (usedFilament / 1000) * materialPrice;
 
                         const timeCost = totalHours * config.time_price_per_hour;
