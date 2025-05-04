@@ -71,6 +71,7 @@
             cursor: pointer;
             width: 100%;
             transition: background-color 0.3s ease;
+            margin-bottom: 10px;
         }
 
         button:hover {
@@ -119,17 +120,58 @@
 </header>
 
 <div class="container">
-    <h2>GCode-Datei hochladen</h2>
+    <h2>GCode-Dateien hochladen</h2>
     <input type="file" id="gcodeInput" accept=".gcode" multiple>
     <button id="processButton">Berechnen</button>
+    <button id="clearButton">Dateien löschen</button>
+
+    <div id="fileList">
+        <!-- Hier werden die hochgeladenen Dateien angezeigt -->
+    </div>
 
     <div class="output" id="output"></div>
 </div>
 
 <script>
-    document.getElementById('processButton').addEventListener('click', function() {
-        const fileInput = document.getElementById('gcodeInput');
-        const outputDiv = document.getElementById('output');
+    const fileInput = document.getElementById('gcodeInput');
+    const outputDiv = document.getElementById('output');
+    const fileListDiv = document.getElementById('fileList');
+    const processButton = document.getElementById('processButton');
+    const clearButton = document.getElementById('clearButton');
+
+    // Zeigt die hochgeladenen Dateien an
+    function displayFiles() {
+        fileListDiv.innerHTML = ''; // Clear existing list
+        const files = fileInput.files;
+        if (files.length > 0) {
+            Array.from(files).forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.textContent = file.name;
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Entfernen';
+                removeButton.onclick = () => {
+                    const dt = new DataTransfer();
+                    for (let i = 0; i < files.length; i++) {
+                        if (i !== index) {
+                            dt.items.add(files[i]);
+                        }
+                    }
+                    fileInput.files = dt.files;
+                    displayFiles(); // Refresh the file list
+                };
+                fileItem.appendChild(removeButton);
+                fileListDiv.appendChild(fileItem);
+            });
+        } else {
+            fileListDiv.innerHTML = '<p>Keine Dateien hochgeladen.</p>';
+        }
+    }
+
+    // Event: Dateiauswahl geändert
+    fileInput.addEventListener('change', displayFiles);
+
+    // Berechnung und Ausgabe
+    processButton.addEventListener('click', function() {
         const files = fileInput.files;
 
         if (files.length === 0) {
@@ -145,9 +187,8 @@
 
                 // Beispielhafte Berechnungen für jede Datei (hier kannst du deine eigenen Berechnungen anpassen)
                 Array.from(files).forEach(file => {
-                    // Simulierte Werte für die Berechnung
                     const usedFilament = 100; // Beispiel: 100g Filament
-                    const materialPrice = config.material_price_per_kg_PLA; // Beispiel: PLA Materialpreis
+                    const materialPrice = config.material_price_per_kg_PLA;
                     const totalMaterialCost = (usedFilament / 1000) * materialPrice;
 
                     const printTime = 5; // Beispiel: 5 Stunden Druckzeit
@@ -177,6 +218,13 @@
                 console.error('Fehler beim Laden der Konfiguration:', error);
                 outputDiv.innerHTML = '<p class="error">Fehler beim Laden der Konfigurationsdatei.</p>';
             });
+    });
+
+    // Clear-Button: Löscht die ausgewählten Dateien
+    clearButton.addEventListener('click', function() {
+        fileInput.value = ''; // Löscht alle ausgewählten Dateien
+        displayFiles(); // Refresh the file list
+        outputDiv.innerHTML = ''; // Löscht die Berechnungsergebnisse
     });
 </script>
 
