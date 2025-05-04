@@ -310,7 +310,9 @@
         materialCost,
         timeCost,
         energyCost,
-        totalFileCost
+        totalFileCost,
+        materialType,
+        usedFilament
       });
 
       const outputHtml = `
@@ -320,6 +322,8 @@
           </div>
           <div class="panel">
             <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+            <p><strong>Materialtyp:</strong> ${materialType}</p>
+            <p><strong>Verwendetes Material:</strong> ${usedFilament.toFixed(2)} g</p>
             <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
             <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
             <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
@@ -330,42 +334,14 @@
       `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
-
-      const acc = document.getElementsByClassName("accordion");
-      for (let i = 0; i < acc.length; i++) {
-        acc[i].addEventListener("click", function() {
-          this.classList.toggle("active");
-          let panel = this.nextElementSibling;
-          if (panel.style.display === "block") {
-            panel.style.display = "none";
-          } else {
-            panel.style.display = "block";
-          }
-        });
-      }
     };
     reader.readAsText(file);
   }
 
-  function calculateTimeCost(timeInHours) {
-    if (timeInHours <= 5) {
-      return timeInHours * costConfig.time_price_per_hour;
-    } else if (timeInHours <= 10) {
-      return timeInHours * costConfig.time_price_per_hour5;
-    } else {
-      return timeInHours * costConfig.time_price_per_hour10;
-    }
-  }
-
   function deleteResult(button, fileName) {
-    const resultElement = document.getElementById(`gcode-${fileName}`);
-    resultElement.remove();
+    button.closest('.gcode-result').remove();
     allResults = allResults.filter(result => result.fileName !== fileName);
     updateTotalCosts();
-    if (allResults.length === 0) {
-      document.getElementById('totalCostContainer').style.display = 'none';
-      document.getElementById('clearAllButton').style.display = 'none';
-    }
   }
 
   function updateTotalCosts() {
@@ -379,31 +355,27 @@
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
     document.getElementById('totalCost').textContent = totalCost.toFixed(2);
 
-    if (allResults.length === 0) {
-      document.getElementById('totalCostContainer').style.display = 'none';
-    } else {
-      document.getElementById('totalCostContainer').style.display = 'block';
+    if (allResults.length > 0) {
       document.getElementById('clearAllButton').style.display = 'inline-block';
+      document.getElementById('totalCostContainer').style.display = 'block';
+    } else {
+      document.getElementById('clearAllButton').style.display = 'none';
+      document.getElementById('totalCostContainer').style.display = 'none';
     }
-  }
-
-  function clearAllResults() {
-    allResults = [];
-    document.getElementById('fileInfo').innerHTML = '';
-    document.getElementById('clearAllButton').style.display = 'none';
-    document.getElementById('totalCostContainer').style.display = 'none';
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
     const files = document.getElementById('gcodeInput').files;
     if (files.length > 0) {
       Array.from(files).forEach(file => processGCodeFile(file));
-    } else {
-      alert("Bitte eine GCode-Datei hochladen.");
     }
   });
 
-  document.getElementById('clearAllButton').addEventListener('click', clearAllResults);
+  document.getElementById('clearAllButton').addEventListener('click', function() {
+    document.getElementById('fileInfo').innerHTML = '';
+    allResults = [];
+    updateTotalCosts();
+  });
 </script>
 
 </body>
