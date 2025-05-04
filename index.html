@@ -5,63 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>3D Druck Kostenrechner</title>
     <style>
+        :root {
+            --primary-color: #4CAF50;
+            --hover-color: #45a049;
+            --bg-color: #f4f4f9;
+            --white-color: #ffffff;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --error-color: #f44336;
+            --font-family: Arial, sans-serif;
+            --button-padding: 15px 20px;
+            --input-padding: 10px;
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
             margin: 0;
             padding: 0;
         }
 
         header {
-            background-color: #4CAF50;
-            color: white;
+            background-color: var(--primary-color);
+            color: var(--white-color);
             padding: 20px;
             text-align: center;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        header img {
-            height: 50px;
-            margin-right: 20px;
+            font-size: 2rem;
         }
 
         .container {
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
-            background-color: white;
+            background-color: var(--white-color);
             border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 10px var(--shadow-color);
         }
 
         h2 {
             font-size: 24px;
             margin-bottom: 15px;
+            color: var(--primary-color);
         }
 
         input[type="file"] {
-            padding: 10px;
+            padding: var(--input-padding);
             margin: 10px 0;
             border: 1px solid #ccc;
             border-radius: 4px;
             width: 100%;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+
+        input[type="file"]:focus {
+            border-color: var(--primary-color);
         }
 
         button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 15px 20px;
+            background-color: var(--primary-color);
+            color: var(--white-color);
+            padding: var(--button-padding);
             border: none;
             border-radius: 4px;
             font-size: 16px;
             cursor: pointer;
             width: 100%;
+            transition: background-color 0.3s ease;
+            margin-bottom: 10px;
         }
 
         button:hover {
-            background-color: #45a049;
+            background-color: var(--hover-color);
         }
 
         .output {
@@ -74,50 +88,99 @@
         }
 
         .error {
-            color: red;
+            color: var(--error-color);
         }
 
         .result-header {
             font-size: 20px;
             font-weight: bold;
             margin-top: 20px;
+            color: var(--primary-color);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            button {
+                padding: 12px 18px;
+            }
         }
     </style>
 </head>
 <body>
 
 <header>
-    <img src="https://github.com/hoedii/3D-Druck-Kostenrechner/blob/main/logo.png?raw=true" alt="Logo">
     <h1>3D Druck Kostenrechner</h1>
 </header>
 
 <div class="container">
-    <h2>GCode-Datei hochladen</h2>
+    <h2>GCode-Dateien hochladen</h2>
     <input type="file" id="gcodeInput" accept=".gcode" multiple>
     <button id="processButton">Berechnen</button>
+    <button id="clearButton">Dateien löschen</button>
+
+    <div id="fileList">
+        <!-- Hier werden die hochgeladenen Dateien angezeigt -->
+    </div>
 
     <div class="output" id="output"></div>
 </div>
 
 <script>
-    function parsePrintTime(str) {
-        let regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/;
-        let match = str.match(regex);
-        if (!match) return { hours: 0, formatted: "0d 0h 0m 0s" };
-        let days = parseInt(match[1] || 0);
-        let hours = parseInt(match[2] || 0);
-        let minutes = parseInt(match[3] || 0);
-        let seconds = parseInt(match[4] || 0);
-        let totalHours = days * 24 + hours + minutes / 60 + seconds / 3600;
-        return {
-            hours: totalHours,
-            formatted: `${days}d ${hours}h ${minutes}m ${seconds}s`
-        };
+    const fileInput = document.getElementById('gcodeInput');
+    const outputDiv = document.getElementById('output');
+    const fileListDiv = document.getElementById('fileList');
+    const processButton = document.getElementById('processButton');
+    const clearButton = document.getElementById('clearButton');
+
+    // Zeigt die hochgeladenen Dateien an
+    function displayFiles() {
+        fileListDiv.innerHTML = ''; // Clear existing list
+        const files = fileInput.files;
+        if (files.length > 0) {
+            Array.from(files).forEach((file, index) => {
+                const fileItem = document.createElement('div');
+                fileItem.textContent = file.name;
+                const removeButton = document.createElement('button');
+                removeButton.textContent = 'Entfernen';
+                removeButton.onclick = () => {
+                    const dt = new DataTransfer();
+                    for (let i = 0; i < files.length; i++) {
+                        if (i !== index) {
+                            dt.items.add(files[i]);
+                        }
+                    }
+                    fileInput.files = dt.files;
+                    displayFiles(); // Refresh the file list
+                };
+                fileItem.appendChild(removeButton);
+                fileListDiv.appendChild(fileItem);
+            });
+        } else {
+            fileListDiv.innerHTML = '<p>Keine Dateien hochgeladen.</p>';
+        }
     }
 
-    document.getElementById('processButton').addEventListener('click', function () {
-        const fileInput = document.getElementById('gcodeInput');
-        const outputDiv = document.getElementById('output');
+    // Event: Dateiauswahl geändert
+    fileInput.addEventListener('change', displayFiles);
+
+    // Funktion zur Umrechnung der Gesamtzeit in das Format d h m s
+    function formatTime(totalHours) {
+        const days = Math.floor(totalHours / 24);
+        const hours = Math.floor(totalHours % 24);
+        const minutes = Math.floor((totalHours * 60) % 60);
+        const seconds = Math.floor((totalHours * 3600) % 60);
+        return `${days} d ${hours} h ${minutes} m ${seconds} s`;
+    }
+
+    // Berechnung und Ausgabe
+    processButton.addEventListener('click', function() {
         const files = fileInput.files;
 
         if (files.length === 0) {
@@ -125,88 +188,56 @@
             return;
         }
 
+        // Lade die Konfigurationsdaten aus der JSON-Datei
         fetch('kosten_config.json')
             .then(response => response.json())
             .then(config => {
                 let outputHtml = '<h3 class="result-header">Ergebnisse:</h3>';
 
+                // Beispielhafte Berechnungen für jede Datei (hier kannst du deine eigenen Berechnungen anpassen)
                 Array.from(files).forEach(file => {
-                    const reader = new FileReader();
-                    reader.onload = function (event) {
-                        const content = event.target.result;
-                        let lines = content.split('\n');
+                    const usedFilament = 100; // Beispiel: 100g Filament
+                    const materialPrice = config.material_price_per_kg_PLA;
+                    const totalMaterialCost = (usedFilament / 1000) * materialPrice;
 
-                        let usedFilament = 0;
-                        let materialType = 'Unknown';
-                        let printTimeString = null;
+                    const printTime = 5; // Beispiel: 5 Stunden Druckzeit
+                    const timeCost = printTime * config.time_price_per_hour;
 
-                        lines.forEach(line => {
-                            if (line.includes('; total filament used [g] =')) {
-                                let match = line.match(/=\s*([\d\.]+)/);
-                                if (match) usedFilament = parseFloat(match[1]);
-                            }
-                            if (line.includes('; paint_info = ')) {
-                                let match = line.match(/; paint_info = (\[.*\])/);
-                                if (match) {
-                                    try {
-                                        let jsonData = JSON.parse(match[1]);
-                                        if (Array.isArray(jsonData) && jsonData.length > 0) {
-                                            materialType = jsonData[0].material_type || 'Unknown';
-                                        }
-                                    } catch (e) {
-                                        console.warn("Fehler beim Parsen von paint_info JSON", e);
-                                    }
-                                }
-                            }
-                            if (line.includes('; print_time =')) {
-                                let match = line.match(/; print_time = (.*)/);
-                                if (match) printTimeString = match[1].trim();
-                            }
-                        });
+                    const energyConsumedKwh = (250 * printTime) / 1000; // Beispiel: Stromverbrauch bei 250W Drucker
+                    const energyCost = energyConsumedKwh * config.energy_price_per_kwh;
 
-                        let timeData = printTimeString ? parsePrintTime(printTimeString) : { hours: 0, formatted: '0d 0h 0m 0s' };
-                        let printTimeHours = timeData.hours;
+                    const totalCost = totalMaterialCost + timeCost + energyCost;
 
-                        let materialPrice = config[`material_price_per_kg_${materialType}`] || config['material_price_per_kg_default'] || 20.0;
-                        let materialCost = (usedFilament / 1000) * materialPrice;
+                    // Berechnung der Gesamtzeit
+                    const formattedTime = formatTime(printTime);
 
-                        let timeCost = 0;
-                        if (printTimeHours <= 5) {
-                            timeCost = printTimeHours * (config.time_price_per_hour || 0);
-                        } else if (printTimeHours <= 10) {
-                            timeCost = printTimeHours * (config.time_price_per_hour5 || 0);
-                        } else {
-                            timeCost = printTimeHours * (config.time_price_per_hour10 || 0);
-                        }
-
-                        let energyKWh = (250 * printTimeHours) / 1000;
-                        let energyCost = energyKWh * (config.energy_price_per_kwh || 0);
-
-                        let totalCost = materialCost + timeCost + energyCost;
-
-                        outputHtml += `
-                            <div>
-                                <p><strong>Datei:</strong> ${file.name}</p>
-                                <p><strong>Materialtyp:</strong> ${materialType}</p>
-                                <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-                                <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-                                <p><strong>Druckzeit:</strong> ${timeData.formatted}</p>
-                                <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-                                <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-                                <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
-                                <hr>
-                            </div>
-                        `;
-
-                        outputDiv.innerHTML = outputHtml;
-                    };
-                    reader.readAsText(file);
+                    outputHtml += `
+                        <div>
+                            <p><strong>Datei:</strong> ${file.name}</p>
+                            <p><strong>Verwendetes Filament:</strong> ${usedFilament}g</p>
+                            <p><strong>Materialkosten:</strong> ${totalMaterialCost.toFixed(2)} CHF</p>
+                            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+                            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+                            <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
+                            <p><strong>Gesamtzeit:</strong> ${formattedTime}</p>
+                            <hr>
+                        </div>
+                    `;
                 });
+
+                outputDiv.innerHTML = outputHtml;
             })
             .catch(error => {
                 console.error('Fehler beim Laden der Konfiguration:', error);
                 outputDiv.innerHTML = '<p class="error">Fehler beim Laden der Konfigurationsdatei.</p>';
             });
+    });
+
+    // Clear-Button: Löscht die ausgewählten Dateien
+    clearButton.addEventListener('click', function() {
+        fileInput.value = ''; // Löscht alle ausgewählten Dateien
+        displayFiles(); // Refresh the file list
+        outputDiv.innerHTML = ''; // Löscht die Berechnungsergebnisse
     });
 </script>
 
