@@ -112,6 +112,9 @@
       font-size: 18px;
       transition: 0.4s;
       border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .active, .accordion:hover {
@@ -170,7 +173,7 @@
       margin: 5px 0;
     }
 
-    /* Anpassung des Textes für "Alle Ergebnisse löschen" */
+    /* Button für alle Ergebnisse löschen linksbündig */
     #clearAllButton {
       background-color: transparent;
       color: black;
@@ -179,10 +182,19 @@
       font-size: 16px;
       cursor: pointer;
       display: block;
-      text-align: right;
+      text-align: left;
       width: 100%;
       margin-top: 20px;
       text-decoration: underline;
+    }
+
+    .accordion::after {
+      content: " ▼";
+      font-size: 18px;
+    }
+
+    .active::after {
+      content: " ▲";
     }
   </style>
 </head>
@@ -338,11 +350,22 @@
 
   function calculateTimeCost(timeInHours) {
     if (timeInHours <= 5) {
-      return timeInHours * costConfig.time_price_per_hour;
-    } else if (timeInHours <= 10) {
       return timeInHours * costConfig.time_price_per_hour5;
-    } else {
+    } else if (timeInHours <= 10) {
       return timeInHours * costConfig.time_price_per_hour10;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour;
+    }
+  }
+
+  function deleteResult(button, fileName) {
+    const resultElement = document.getElementById(`gcode-${fileName}`);
+    resultElement.remove();
+    allResults = allResults.filter(result => result.fileName !== fileName);
+    updateTotalCosts();
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none';
+      document.getElementById('clearAllButton').style.display = 'none';
     }
   }
 
@@ -357,7 +380,6 @@
     document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
     document.getElementById('totalCost').textContent = totalCost.toFixed(2);
 
-    // Hide total costs if there are no results
     if (allResults.length === 0) {
       document.getElementById('totalCostContainer').style.display = 'none';
     }
