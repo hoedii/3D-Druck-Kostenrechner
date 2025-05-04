@@ -117,11 +117,10 @@
 </div>
 
 <script>
-  // Konfiguration mit den neuen Parametern aus der JSON-Datei
   const costConfig = {
     time_price_per_hour: 2.75,
-    time_price_per_hour5: 2,
-    time_price_per_hour10: 1.5,
+    time_price_per_hour5: 2.00,
+    time_price_per_hour10: 1.50,
     material_price_per_kg_PLA: 24.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
@@ -131,12 +130,12 @@
   };
 
   function convertTimeToHours(timeStr) {
-    const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-    if (timeMatch) {
-      const days = parseInt(timeMatch[1] || 0, 10);
-      const hours = parseInt(timeMatch[2] || 0, 10);
-      const minutes = parseInt(timeMatch[3] || 0, 10);
-      const seconds = parseInt(timeMatch[4] || 0, 10);
+    const match = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/i);
+    if (match) {
+      const days = parseInt(match[1] || 0, 10);
+      const hours = parseInt(match[2] || 0, 10);
+      const minutes = parseInt(match[3] || 0, 10);
+      const seconds = parseInt(match[4] || 0, 10);
       return days * 24 + hours + minutes / 60 + seconds / 3600;
     }
     return 0;
@@ -151,7 +150,6 @@
       let materialType = 'PLA';
       let printTimeStr = '';
 
-      // Materialtyp aus dem GCode auslesen
       const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
       if (materialMatch) {
         try {
@@ -164,69 +162,49 @@
         }
       }
 
-      // Verwendetes Filament auslesen
-      const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
+      const filamentMatch = gcodeText.match(/; total filament used \[g\] = ([\d.]+)/);
       if (filamentMatch) {
         usedFilament = parseFloat(filamentMatch[1]);
       }
 
-      // Druckzeit auslesen
       const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
       const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
-      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\ddhms\s]+)/i);
 
       if (timeMatch1) {
         printTimeStr = timeMatch1[1].trim();
         printTime = convertTimeToHours(printTimeStr);
       } else if (timeMatch2) {
         printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+        printTimeStr = `${Math.floor(printTime)}h ${Math.round((printTime % 1) * 60)}m`;
       } else if (timeMatch3) {
         printTimeStr = timeMatch3[1].trim();
         printTime = convertTimeToHours(printTimeStr);
       }
 
-      // Materialpreis basierend auf dem Typ auswählen
-      let materialPrice;
-      switch (materialType) {
-        case 'ABS':
-          materialPrice = costConfig.material_price_per_kg_ABS;
-          break;
-        case 'TPU':
-          materialPrice = costConfig.material_price_per_kg_TPU;
-          break;
-        case 'PETG':
-          materialPrice = costConfig.material_price_per_kg_PETG;
-          break;
-        case 'ASA':
-          materialPrice = costConfig.material_price_per_kg_ASA;
-          break;
-        default:
-          materialPrice = costConfig.material_price_per_kg_PLA;
-          break;
-      }
-
+      const materialKey = `material_price_per_kg_${materialType}`;
+      const materialPrice = costConfig[materialKey] || costConfig.material_price_per_kg_PLA;
       const materialCost = (usedFilament / 1000) * materialPrice;
 
-      // Zeitkosten basierend auf der Druckzeit
-      let timeCost;
+      let timePricePerHour;
       if (printTime <= 5) {
-        timeCost = printTime * costConfig.time_price_per_hour5;
+        timePricePerHour = costConfig.time_price_per_hour;
       } else if (printTime <= 10) {
-        timeCost = printTime * costConfig.time_price_per_hour10;
+        timePricePerHour = costConfig.time_price_per_hour5;
       } else {
-        timeCost = printTime * costConfig.time_price_per_hour;
+        timePricePerHour = costConfig.time_price_per_hour10;
       }
 
-      const energyConsumedKwh = (250 * printTime) / 1000;
-      const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
+      const timeCost = printTime * timePricePerHour;
+      const energyConsumed = (250 * printTime) / 1000;
+      const energyCost = energyConsumed * costConfig.energy_price_per_kwh;
       const totalCost = materialCost + timeCost + energyCost;
 
       const outputHtml = `
         <h3 class="result-header">Ergebnisse:</h3>
         <p><strong>Datei:</strong> ${file.name}</p>
         <p><strong>Materialtyp:</strong> ${materialType}</p>
-        <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
+        <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
         <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
         <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
         <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
@@ -234,7 +212,6 @@
         <p><strong>Gesamtkosten:</strong> ${totalCost.toFixed(2)} CHF</p>
       `;
       document.getElementById('fileInfo').innerHTML = outputHtml;
-
       document.getElementById('clearContainer').innerHTML = `
         <button class="clear-button" onclick="clearOutput()">Ergebnisse zurücksetzen</button>
       `;
@@ -254,7 +231,7 @@
     if (file) {
       processGCodeFile(file);
     } else {
-      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte laden Sie eine GCode-Datei hoch.</p>';
+      document.getElementById('fileInfo').innerHTML = '<p class="error">Bitte wähle eine GCode-Datei aus.</p>';
     }
   });
 </script>
