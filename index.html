@@ -181,6 +181,7 @@
       margin-top: 20px;
       cursor: pointer;
       width: 100%;
+      display: none; /* Initially hidden */
     }
 
     #exportButton:hover {
@@ -237,23 +238,59 @@
   let totalCost = 0;
   let allResults = [];
 
-  // Die gleiche Logik wie vorher für das Verarbeiten der GCode-Datei...
+  // Funktion zum Verarbeiten der GCode-Datei und Berechnung
+  function processFile(gcodeContent, fileName) {
+    // Deine Berechnungslogik hier ...
+
+    // Beispielhafte Berechnungen:
+    let materialCost = 5.00; // Berechneter Materialpreis
+    let timeCost = 2.50;     // Berechneter Zeitpreis
+    let energyCost = 1.20;   // Berechneter Strompreis
+
+    let totalFileCost = materialCost + timeCost + energyCost;
+
+    // Ergebnisse speichern
+    allResults.push({
+      fileName: fileName,
+      materialCost: materialCost,
+      timeCost: timeCost,
+      energyCost: energyCost,
+      totalFileCost: totalFileCost
+    });
+
+    // Gesamtkosten berechnen
+    totalMaterialCost += materialCost;
+    totalTimeCost += timeCost;
+    totalEnergyCost += energyCost;
+    totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
+
+    // Gesamtkosten anzeigen
+    document.getElementById("totalMaterialCost").textContent = totalMaterialCost.toFixed(2) + " CHF";
+    document.getElementById("totalTimeCost").textContent = totalTimeCost.toFixed(2) + " CHF";
+    document.getElementById("totalEnergyCost").textContent = totalEnergyCost.toFixed(2) + " CHF";
+    document.getElementById("totalCost").textContent = totalCost.toFixed(2) + " CHF";
+
+    // PDF Export Button sichtbar machen
+    document.getElementById("exportButton").style.display = "inline-block";
+  }
 
   // PDF Export Funktion
   function exportAsPDF() {
     const doc = new jsPDF();
 
-    // Logo hinzufügen
+    // Header mit Logo und Markenname
     doc.addImage('https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png', 'PNG', 10, 10, 50, 50);
-    
-    // Titel
     doc.setFont('Helvetica', 'bold');
     doc.setFontSize(16);
     doc.text('3D Druck Kalkulation - piodeer', 70, 25);
 
-    // Gesamtkosten
+    // Exportzeitpunkt
+    const exportTime = new Date().toLocaleString();
     doc.setFont('Helvetica', 'normal');
     doc.setFontSize(12);
+    doc.text(`Exportiert am: ${exportTime}`, 10, 60);
+
+    // Gesamtkosten
     doc.text(`Materialkosten: ${totalMaterialCost.toFixed(2)} CHF`, 10, 70);
     doc.text(`Zeitkosten: ${totalTimeCost.toFixed(2)} CHF`, 10, 80);
     doc.text(`Stromkosten: ${totalEnergyCost.toFixed(2)} CHF`, 10, 90);
@@ -277,7 +314,11 @@
   // Event-Listener für PDF Export
   document.getElementById('exportButton').addEventListener('click', exportAsPDF);
 
-  // Die gleiche Logik für das Verarbeiten und Anzeigen von GCode-Dateien...
+  // Event-Listener für das Berechnen der Datei
+  document.getElementById('processButton').addEventListener('click', () => {
+    // Beispielhafter GCode-Inhalt und Datei-Name
+    processFile('BeispielGCode', 'Beispiel.gcode');
+  });
 </script>
 
 </body>
