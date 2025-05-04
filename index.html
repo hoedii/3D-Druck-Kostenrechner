@@ -97,6 +97,7 @@
     // Dummy-Konfigurationsdaten, die du auf der Webseite verwenden kannst
     const costConfig = {
         material_price_per_kg_PLA: 25.0, // Preis pro kg PLA
+        material_price_per_kg_TPU: 40.0, // Preis pro kg TPU
         time_price_per_hour: 2.0,        // Preis pro Stunde
         energy_price_per_kwh: 0.2       // Preis pro kWh
     };
@@ -124,6 +125,19 @@
             let materialType = 'PLA'; // Standardmaterial
             let printTimeStr = '';
 
+            // Materialtyp extrahieren (z.B. PLA, TPU)
+            const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+            if (materialMatch) {
+                try {
+                    const materialInfo = JSON.parse(materialMatch[1]);
+                    if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+                        materialType = materialInfo[0].material_type || 'PLA'; // Standard auf PLA, wenn nicht angegeben
+                    }
+                } catch (e) {
+                    console.error('Fehler beim Parsen des Materialtyps:', e);
+                }
+            }
+
             // Durchsuche die GCode-Datei nach den relevanten Informationen
             const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
             if (filamentMatch) {
@@ -136,8 +150,10 @@
                 printTime = convertTimeToHours(printTimeStr);
             }
 
-            // Materialpreis berechnen
-            const materialCost = (usedFilament / 1000) * costConfig.material_price_per_kg_PLA;
+            // Materialpreis berechnen basierend auf dem Materialtyp
+            const materialPriceKey = `material_price_per_kg_${materialType}`;
+            const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA; // Standard auf PLA, falls nicht gefunden
+            const materialCost = (usedFilament / 1000) * materialPrice;
 
             // Zeitkosten berechnen
             const timeCost = printTime * costConfig.time_price_per_hour;
@@ -153,6 +169,7 @@
             const outputHtml = `
                 <h3 class="result-header">Ergebnisse:</h3>
                 <p><strong>Datei:</strong> ${file.name}</p>
+                <p><strong>Materialtyp:</strong> ${materialType}</p>
                 <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
                 <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
                 <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
