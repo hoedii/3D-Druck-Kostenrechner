@@ -112,6 +112,9 @@
       font-size: 18px;
       transition: 0.4s;
       border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .active, .accordion:hover {
@@ -170,51 +173,7 @@
       margin: 5px 0;
     }
 
-    #fileInfo {
-      width: calc(100% - 40px); /* Die Breite auf die des Containers anpassen */
-      margin: 20px 0 0 0;
-    }
-
-    .gcode-result {
-      background-color: #f4f4f9;
-      padding: 15px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-    }
-
-    .accordion {
-      font-size: 18px;
-      padding: 10px;
-      background-color: #f1f1f1;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .accordion:hover {
-      background-color: #ddd;
-    }
-
-    .panel {
-      padding: 0 18px;
-      display: none;
-      background-color: #f9f9f9;
-      border-left: 4px solid #4CAF50;
-    }
-
-    button.delete-button {
-      background-color: #ff4d4d;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-    }
-
-    button.delete-button:hover {
-      background-color: #e60000;
-    }
-
+    /* Button für alle Ergebnisse löschen linksbündig */
     #clearAllButton {
       background-color: transparent;
       color: black;
@@ -227,6 +186,15 @@
       width: 100%;
       margin-top: 20px;
       text-decoration: underline;
+    }
+
+    .accordion::after {
+      content: " ▼";
+      font-size: 18px;
+    }
+
+    .active::after {
+      content: " ▲";
     }
   </style>
 </head>
@@ -243,10 +211,11 @@
   <button id="processButton">Berechnen</button>
 
   <div id="fileInfo"></div>
-  <div id="clearContainer"></div>
   
-  <button id="clearAllButton">Alle Ergebnisse löschen</button>
-
+  <!-- Der Text zum Löschen aller Ergebnisse -->
+  <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
+  
+  <!-- Die Gesamtkosten werden hier angezeigt -->
   <div class="total-cost-container" id="totalCostContainer">
     <h3>Gesamtkosten</h3>
     <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
@@ -258,9 +227,9 @@
 
 <script>
   const costConfig = {
-    time_price_per_hour: 2.75,       
-    time_price_per_hour5: 2,         
-    time_price_per_hour10: 1.5,      
+    time_price_per_hour: 2.75,       // für unter 5 Stunden
+    time_price_per_hour5: 2,         // für über 5 Stunden
+    time_price_per_hour10: 1.5,      // für über 10 Stunden
     material_price_per_kg_PLA: 24.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
@@ -314,109 +283,124 @@
       }
 
       const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-      const timeMatch2 = gcodeText.match(/; elapsed_time = ([\ddhms\s]+)/);
-      const printTimeStr1 = timeMatch1 ? timeMatch1[1] : timeMatch2 ? timeMatch2[1] : '';
-      printTime = convertTimeToHours(printTimeStr1);
+      const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
 
-      const materialPrice = costConfig[`material_price_per_kg_${materialType}`] || costConfig.material_price_per_kg_PLA;
+      if (timeMatch1) {
+        printTimeStr = timeMatch1[1].trim();
+        printTime = convertTimeToHours(printTimeStr);
+      } else if (timeMatch2) {
+        printTime = parseInt(timeMatch2[1], 10) / 3600;
+        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+      } else if (timeMatch3) {
+        printTimeStr = timeMatch3[1].trim();
+        printTime = convertTimeToHours(printTimeStr);
+      }
 
+      const materialPriceKey = `material_price_per_kg_${materialType}`;
+      const materialPrice = costConfig[materialPriceKey] || costConfig.material_price_per_kg_PLA;
       const materialCost = (usedFilament / 1000) * materialPrice;
-      const timeCost = printTime <= 5 ? printTime * costConfig.time_price_per_hour :
-                       printTime <= 10 ? printTime * costConfig.time_price_per_hour5 :
-                       printTime * costConfig.time_price_per_hour10;
-      const energyCost = (printTime / 1000) * costConfig.energy_price_per_kwh;
-
-      const total = materialCost + timeCost + energyCost;
+      const timeCost = calculateTimeCost(printTime);
+      const energyConsumedKwh = (250 * printTime) / 1000;
+      const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
+      const totalFileCost = materialCost + timeCost + energyCost;
 
       allResults.push({
+        fileName: file.name,
         materialCost,
         timeCost,
         energyCost,
-        total,
-        time: printTimeStr1
+        totalFileCost
       });
 
-      updateResults();
+      const outputHtml = `
+        <div class="gcode-result" id="gcode-${file.name}">
+          <div class="accordion">
+            <span>${file.name}</span>
+          </div>
+          <div class="panel">
+            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+      updateTotalCosts();
+
+      const acc = document.getElementsByClassName("accordion");
+      for (let i = 0; i < acc.length; i++) {
+        acc[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          let panel = this.nextElementSibling;
+          if (panel.style.display === "block") {
+            panel.style.display = "none";
+          } else {
+            panel.style.display = "block";
+          }
+        });
+      }
     };
     reader.readAsText(file);
   }
 
-  function updateResults() {
-    const fileInfo = document.getElementById('fileInfo');
-    const clearContainer = document.getElementById('clearContainer');
-    const totalCostContainer = document.getElementById('totalCostContainer');
-    const totalMaterialCostEl = document.getElementById('totalMaterialCost');
-    const totalTimeCostEl = document.getElementById('totalTimeCost');
-    const totalEnergyCostEl = document.getElementById('totalEnergyCost');
-    const totalCostEl = document.getElementById('totalCost');
+  function calculateTimeCost(timeInHours) {
+    if (timeInHours <= 5) {
+      return timeInHours * costConfig.time_price_per_hour;
+    } else if (timeInHours <= 10) {
+      return timeInHours * costConfig.time_price_per_hour5;
+    } else {
+      return timeInHours * costConfig.time_price_per_hour10;
+    }
+  }
 
-    fileInfo.innerHTML = '';
+  function deleteResult(button, fileName) {
+    const resultElement = document.getElementById(`gcode-${fileName}`);
+    resultElement.remove();
+    allResults = allResults.filter(result => result.fileName !== fileName);
+    updateTotalCosts();
+    if (allResults.length === 0) {
+      document.getElementById('totalCostContainer').style.display = 'none';
+      document.getElementById('clearAllButton').style.display = 'none';
+    }
+  }
 
-    allResults.forEach(result => {
-      const resultDiv = document.createElement('div');
-      resultDiv.classList.add('gcode-result');
+  function updateTotalCosts() {
+    totalMaterialCost = allResults.reduce((sum, result) => sum + result.materialCost, 0);
+    totalTimeCost = allResults.reduce((sum, result) => sum + result.timeCost, 0);
+    totalEnergyCost = allResults.reduce((sum, result) => sum + result.energyCost, 0);
+    totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
 
-      resultDiv.innerHTML = `
-        <div class="accordion">Ergebnisse anzeigen</div>
-        <div class="panel">
-          <p>Zeitkosten: <strong>${result.timeCost.toFixed(2)} CHF</strong></p>
-          <p>Materialkosten: <strong>${result.materialCost.toFixed(2)} CHF</strong></p>
-          <p>Stromkosten: <strong>${result.energyCost.toFixed(2)} CHF</strong></p>
-          <button class="delete-button">Eintrag löschen</button>
-        </div>
-      `;
-      
-      const deleteButton = resultDiv.querySelector('.delete-button');
-      deleteButton.addEventListener('click', () => {
-        allResults = allResults.filter(r => r !== result);
-        updateResults();
-      });
+    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
+    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
+    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
+    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
 
-      const accordion = resultDiv.querySelector('.accordion');
-      const panel = resultDiv.querySelector('.panel');
-
-      accordion.addEventListener('click', function() {
-        this.classList.toggle('active');
-        if (panel.style.display === 'block') {
-          panel.style.display = 'none';
-        } else {
-          panel.style.display = 'block';
-        }
-      });
-
-      fileInfo.appendChild(resultDiv);
-    });
-
-    totalMaterialCost = allResults.reduce((acc, result) => acc + result.materialCost, 0);
-    totalTimeCost = allResults.reduce((acc, result) => acc + result.timeCost, 0);
-    totalEnergyCost = allResults.reduce((acc, result) => acc + result.energyCost, 0);
-    totalCost = allResults.reduce((acc, result) => acc + result.total, 0);
-
-    totalMaterialCostEl.textContent = totalMaterialCost.toFixed(2) + ' CHF';
-    totalTimeCostEl.textContent = totalTimeCost.toFixed(2) + ' CHF';
-    totalEnergyCostEl.textContent = totalEnergyCost.toFixed(2) + ' CHF';
-    totalCostEl.textContent = totalCost.toFixed(2) + ' CHF';
-
-    totalCostContainer.style.display = allResults.length > 0 ? 'block' : 'none';
+    document.getElementById('totalCostContainer').style.display = 'block';
+    document.getElementById('clearAllButton').style.display = 'block';
   }
 
   document.getElementById('processButton').addEventListener('click', () => {
-    const gcodeInput = document.getElementById('gcodeInput');
-    if (gcodeInput.files.length === 0) {
-      alert('Bitte wählen Sie mindestens eine GCode-Datei aus!');
-    } else {
-      for (const file of gcodeInput.files) {
-        processGCodeFile(file);
-      }
+    const files = document.getElementById('gcodeInput').files;
+    if (files.length === 0) {
+      alert('Bitte mindestens eine GCode-Datei hochladen.');
+      return;
+    }
+    for (let i = 0; i < files.length; i++) {
+      processGCodeFile(files[i]);
     }
   });
 
   document.getElementById('clearAllButton').addEventListener('click', () => {
     allResults = [];
-    updateResults();
+    document.getElementById('fileInfo').innerHTML = '';
+    updateTotalCosts();
+    document.getElementById('totalCostContainer').style.display = 'none';
+    document.getElementById('clearAllButton').style.display = 'none';
   });
-
 </script>
-
 </body>
 </html>
