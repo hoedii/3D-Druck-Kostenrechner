@@ -307,6 +307,8 @@
 
       allResults.push({
         fileName: file.name,
+        materialType,
+        usedFilament,
         materialCost,
         timeCost,
         energyCost,
@@ -319,6 +321,8 @@
             <span>${file.name}</span>
           </div>
           <div class="panel">
+            <p><strong>Materialtyp:</strong> ${materialType}</p>
+            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
             <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
             <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
             <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
@@ -347,63 +351,60 @@
     reader.readAsText(file);
   }
 
-  function calculateTimeCost(timeInHours) {
-    if (timeInHours <= 5) {
-      return timeInHours * costConfig.time_price_per_hour;
-    } else if (timeInHours <= 10) {
-      return timeInHours * costConfig.time_price_per_hour5;
+  function calculateTimeCost(printTime) {
+    let timeCost = 0;
+    if (printTime <= 5) {
+      timeCost = printTime * costConfig.time_price_per_hour;
+    } else if (printTime <= 10) {
+      timeCost = printTime * costConfig.time_price_per_hour5;
     } else {
-      return timeInHours * costConfig.time_price_per_hour10;
+      timeCost = printTime * costConfig.time_price_per_hour10;
     }
-  }
-
-  function deleteResult(button, fileName) {
-    const resultElement = document.getElementById(`gcode-${fileName}`);
-    resultElement.remove();
-    allResults = allResults.filter(result => result.fileName !== fileName);
-    updateTotalCosts();
-    if (allResults.length === 0) {
-      document.getElementById('totalCostContainer').style.display = 'none';
-      document.getElementById('clearAllButton').style.display = 'none';
-    }
+    return timeCost;
   }
 
   function updateTotalCosts() {
-    totalMaterialCost = allResults.reduce((sum, result) => sum + result.materialCost, 0);
-    totalTimeCost = allResults.reduce((sum, result) => sum + result.timeCost, 0);
-    totalEnergyCost = allResults.reduce((sum, result) => sum + result.energyCost, 0);
+    totalMaterialCost = 0;
+    totalTimeCost = 0;
+    totalEnergyCost = 0;
+    allResults.forEach(result => {
+      totalMaterialCost += result.materialCost;
+      totalTimeCost += result.timeCost;
+      totalEnergyCost += result.energyCost;
+    });
     totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
-
-    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2);
-    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2);
-    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2);
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2);
-
-    if (allResults.length === 0) {
-      document.getElementById('totalCostContainer').style.display = 'none';
-    } else {
-      document.getElementById('totalCostContainer').style.display = 'block';
-      document.getElementById('clearAllButton').style.display = 'inline-block';
-    }
+    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
+    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
+    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
+    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
+    document.getElementById('totalCostContainer').style.display = 'block';
   }
 
-  function clearAllResults() {
-    allResults = [];
-    document.getElementById('fileInfo').innerHTML = '';
-    document.getElementById('clearAllButton').style.display = 'none';
-    document.getElementById('totalCostContainer').style.display = 'none';
+  function deleteResult(button, fileName) {
+    button.closest('.gcode-result').remove();
+    allResults = allResults.filter(result => result.fileName !== fileName);
+    updateTotalCosts();
   }
 
-  document.getElementById('processButton').addEventListener('click', function() {
+  document.getElementById('processButton').addEventListener('click', () => {
     const files = document.getElementById('gcodeInput').files;
-    if (files.length > 0) {
-      Array.from(files).forEach(file => processGCodeFile(file));
-    } else {
-      alert("Bitte eine GCode-Datei hochladen.");
+    if (files.length === 0) {
+      alert('Bitte eine oder mehrere GCode-Dateien hochladen.');
+      return;
     }
+    for (let i = 0; i < files.length; i++) {
+      processGCodeFile(files[i]);
+    }
+    document.getElementById('clearAllButton').style.display = 'inline';
   });
 
-  document.getElementById('clearAllButton').addEventListener('click', clearAllResults);
+  document.getElementById('clearAllButton').addEventListener('click', () => {
+    document.getElementById('fileInfo').innerHTML = '';
+    allResults = [];
+    updateTotalCosts();
+    document.getElementById('totalCostContainer').style.display = 'none';
+    document.getElementById('clearAllButton').style.display = 'none';
+  });
 </script>
 
 </body>
