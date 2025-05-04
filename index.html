@@ -112,7 +112,6 @@
       font-size: 18px;
       transition: 0.4s;
       border-radius: 4px;
-      position: relative;
     }
 
     .active, .accordion:hover {
@@ -127,20 +126,25 @@
       border-left: 4px solid #4CAF50;
     }
 
-    .remove-button {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background-color: transparent;
-      border: none;
+    .delete-button {
+      background-color: #ff4d4d;
+      color: white;
+      padding: 5px 10px;
+      border-radius: 4px;
       font-size: 14px;
       cursor: pointer;
-      color: #f44336;
-      font-weight: bold;
+      margin-top: 10px;
     }
 
-    .remove-button:hover {
-      color: #d32f2f;
+    .delete-button:hover {
+      background-color: #e60000;
+    }
+
+    .total-costs {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #4CAF50;
     }
   </style>
 </head>
@@ -158,13 +162,14 @@
 
   <div id="fileInfo"></div>
   <div id="clearContainer"></div>
+  <div class="total-costs" id="totalCosts">Gesamtkosten: 0.00 CHF</div>
 </div>
 
 <script>
   const costConfig = {
-    time_price_per_hour: 2.75,       // für Zeit unter 5 Stunden
-    time_price_per_hour5: 2,         // für Zeit zwischen 5 und 10 Stunden
-    time_price_per_hour10: 1.5,      // für Zeit über 10 Stunden
+    time_price_per_hour: 2.75,       
+    time_price_per_hour5: 2,         
+    time_price_per_hour10: 1.5,      
     material_price_per_kg_PLA: 24.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
@@ -173,7 +178,10 @@
     energy_price_per_kwh: 0.40
   };
 
-  let totalCost = 0; // Variable für Gesamtkosten
+  let totalMaterialCost = 0;
+  let totalTimeCost = 0;
+  let totalEnergyCost = 0;
+  let totalCost = 0;
 
   function convertTimeToHours(timeStr) {
     const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
@@ -234,11 +242,15 @@
       const timeCost = calculateTimeCost(printTime);
       const energyConsumedKwh = (250 * printTime) / 1000;
       const energyCost = energyConsumedKwh * costConfig.energy_price_per_kwh;
-      const totalCostForFile = materialCost + timeCost + energyCost;
-      totalCost += totalCostForFile; // Gesamtkosten kumulieren
+      const totalFileCost = materialCost + timeCost + energyCost;
+
+      totalMaterialCost += materialCost;
+      totalTimeCost += timeCost;
+      totalEnergyCost += energyCost;
+      totalCost += totalFileCost;
 
       const outputHtml = `
-        <button class="accordion">Ergebnisse für ${file.name} <button class="remove-button" onclick="removeFile(this, ${totalCostForFile}, ${materialCost}, ${timeCost}, ${energyCost})">Entfernen</button></button>
+        <button class="accordion">Ergebnisse für ${file.name}</button>
         <div class="panel">
           <p><strong>Materialtyp:</strong> ${materialType}</p>
           <p><strong>Verwendetes Filament:</strong> ${usedFilament} g</p>
@@ -246,7 +258,8 @@
           <p><strong>Druckzeit:</strong> ${printTimeStr}</p>
           <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
           <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-          <p><strong>Gesamtkosten für diese Datei:</strong> ${totalCostForFile.toFixed(2)} CHF</p>
+          <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+          <button class="delete-button" onclick="deleteResult(this)">Löschen</button>
         </div>
       `;
       document.getElementById('fileInfo').innerHTML += outputHtml;
@@ -265,41 +278,22 @@
     }
   }
 
-  function removeFile(button, totalCostForFile, materialCost, timeCost, energyCost) {
-    const panel = button.closest('.accordion').nextElementSibling;
-    panel.style.display = 'none';
-    totalCost -= totalCostForFile;
-    updateTotalCosts();
+  function updateTotalCosts() {
+    const totalHtml = `
+      <p>Materialkosten: ${totalMaterialCost.toFixed(2)} CHF</p>
+      <p>Zeitkosten: ${totalTimeCost.toFixed(2)} CHF</p>
+      <p>Stromkosten: ${totalEnergyCost.toFixed(2)} CHF</p>
+      <p><strong>Gesamtkosten: ${totalCost.toFixed(2)} CHF</strong></p>
+    `;
+    document.getElementById('totalCosts').innerHTML = totalHtml;
   }
 
-  function updateTotalCosts() {
-    let totalMaterialCost = 0;
-    let totalTimeCost = 0;
-    let totalEnergyCost = 0;
-    let totalFileCost = 0;
-
-    const panels = document.querySelectorAll('.panel');
-    panels.forEach(panel => {
-      const materialCost = parseFloat(panel.querySelector('p:nth-child(3)').textContent.match(/(\d+\.\d+)/)[0]);
-      const timeCost = parseFloat(panel.querySelector('p:nth-child(4)').textContent.match(/(\d+\.\d+)/)[0]);
-      const energyCost = parseFloat(panel.querySelector('p:nth-child(5)').textContent.match(/(\d+\.\d+)/)[0]);
-
-      totalMaterialCost += materialCost;
-      totalTimeCost += timeCost;
-      totalEnergyCost += energyCost;
-      totalFileCost += materialCost + timeCost + energyCost;
-    });
-
-    const costSummary = `
-      <div>
-        <h3>Gesamtkostenübersicht:</h3>
-        <p><strong>Materialkosten:</strong> ${totalMaterialCost.toFixed(2)} CHF</p>
-        <p><strong>Zeitkosten:</strong> ${totalTimeCost.toFixed(2)} CHF</p>
-        <p><strong>Stromkosten:</strong> ${totalEnergyCost.toFixed(2)} CHF</p>
-        <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-      </div>
-    `;
-    document.getElementById('clearContainer').innerHTML = costSummary;
+  function deleteResult(button) {
+    const panel = button.closest('.panel');
+    const fileCost = parseFloat(panel.querySelector('p strong:last-of-type').textContent.replace(' CHF', ''));
+    totalCost -= fileCost;
+    panel.remove();
+    updateTotalCosts();
   }
 
   document.getElementById('processButton').addEventListener('click', function() {
