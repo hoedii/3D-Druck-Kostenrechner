@@ -336,19 +336,22 @@
       updateTotalCosts();
       addAccordionListeners();
     };
-    reader.readAsText(file);
-  }
+reader.readAsText(file);
+}
 
-  document.getElementById('processButton').addEventListener('click', () => {
-    const files = document.getElementById('gcodeInput').files;
-    for (let i = 0; i < files.length; i++) processGCodeFile(files[i]);
-  });
+document.getElementById('processButton').addEventListener('click', () => {
+  const files = document.getElementById('gcodeInput').files;
+  for (let i = 0; i < files.length; i++) processGCodeFile(files[i]);
 
-  document.getElementById('clearAllButton').addEventListener('click', () => {
-    allResults = [];
-    document.getElementById('fileInfo').innerHTML = '';
-    updateTotalCosts();
-  });
+  // Leeren des Upload-Felds nach dem Klick auf "Berechnen"
+  document.getElementById('gcodeInput').value = '';
+});
+
+document.getElementById('clearAllButton').addEventListener('click', () => {
+  allResults = [];
+  document.getElementById('fileInfo').innerHTML = '';
+  updateTotalCosts();
+});
 </script>
 
 <footer>
