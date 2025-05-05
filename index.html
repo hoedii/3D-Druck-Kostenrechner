@@ -11,9 +11,6 @@
       background-color: #f4f4f9;
       margin: 0;
       padding: 0;
-      min-height: 100vh; /* sorgt dafür, dass der Body mindestens die Höhe des Bildschirms hat */
-      display: flex;
-      flex-direction: column;
     }
     header {
       background-color: #4CAF50;
@@ -34,7 +31,6 @@
       background-color: white;
       border-radius: 8px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      flex: 1; /* ermöglicht es dem Container, den verfügbaren Raum einzunehmen */
     }
     h2 {
       font-size: 24px;
@@ -162,13 +158,6 @@
     .active::after {
       content: " ▲";
     }
-    footer {
-      text-align: center;
-      font-size: 12px;
-      color: #777;
-      padding: 10px 0;
-      margin-top: auto; /* sorgt dafür, dass der Footer immer unten bleibt */
-    }
   </style>
 </head>
 <body>
@@ -291,67 +280,69 @@
         printTime = convertTimeToHours(printTimeStr);
       } else if (timeMatch2) {
         printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
+        printTimeStr = ${Math.round(printTime * 60)} Minuten;
       } else if (timeMatch3) {
         printTimeStr = timeMatch3[1].trim();
         printTime = convertTimeToHours(printTimeStr);
+      } else {
+        printTimeStr = 'Unbekannt';
+        printTime = 0;
       }
 
-      const materialCost = usedFilament / 1000 * costConfig[`material_price_per_kg_${materialType}`] || 0;
-      const timeCost = printTime * costConfig[`time_price_per_hour`] || 0;
-      const energyCost = printTime * 0.1 * costConfig.energy_price_per_kwh || 0; // Annahme: 0.1 kWh pro Stunde
+      const pricePerKg = costConfig[material_price_per_kg_${materialType.toUpperCase()}] || 0;
+      const materialCost = usedFilament / 1000 * pricePerKg;
 
-      const result = {
+      let timeCost = 0;
+      if (printTime <= 5) timeCost = printTime * costConfig.time_price_per_hour;
+      else if (printTime <= 10) timeCost = printTime * costConfig.time_price_per_hour5;
+      else timeCost = printTime * costConfig.time_price_per_hour10;
+
+      const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
+      const totalFileCost = materialCost + timeCost + energyCost;
+
+      allResults.push({
         fileName: file.name,
+        materialType,
+        usedFilament,
+        printTimeStr,
         materialCost,
         timeCost,
-        energyCost,
-        usedFilament,
-        printTime,
-        printTimeStr
-      };
+        energyCost
+      });
 
-      allResults.push(result);
-      const resultHTML = `
-        <div class="gcode-result">
-          <button class="accordion">${file.name}</button>
+      const outputHtml = 
+        <div class="gcode-result" id="gcode-${file.name}">
+          <div class="accordion"><span>${file.name}</span></div>
           <div class="panel">
-            <p>Filament: ${usedFilament.toFixed(2)} g</p>
-            <p>Materialkosten: ${materialCost.toFixed(2)} CHF</p>
-            <p>Printzeit: ${printTimeStr} (${printTime.toFixed(2)} Stunden)</p>
-            <p>Zeitkosten: ${timeCost.toFixed(2)} CHF</p>
-            <p>Stromkosten: ${energyCost.toFixed(2)} CHF</p>
-            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Ergebnis löschen</button>
+            <p><strong>Materialtyp:</strong> ${materialType}</p>
+            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
+            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
         </div>
-      `;
-      document.getElementById('fileInfo').innerHTML += resultHTML;
-      addAccordionListeners();
+      ;
+      document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
+      addAccordionListeners();
     };
     reader.readAsText(file);
   }
 
   document.getElementById('processButton').addEventListener('click', () => {
     const files = document.getElementById('gcodeInput').files;
-    if (files.length === 0) {
-      alert("Bitte eine oder mehrere GCode-Dateien auswählen.");
-      return;
-    }
-
-    Array.from(files).forEach(processGCodeFile);
+    for (let i = 0; i < files.length; i++) processGCodeFile(files[i]);
   });
 
   document.getElementById('clearAllButton').addEventListener('click', () => {
-    document.getElementById('fileInfo').innerHTML = '';
     allResults = [];
+    document.getElementById('fileInfo').innerHTML = '';
     updateTotalCosts();
   });
 </script>
-
-<footer>
-  <p>© 2025 piodeer. All rights reserved. Created with Github & ChatGPT.</p>
-</footer>
 
 </body>
 </html>
