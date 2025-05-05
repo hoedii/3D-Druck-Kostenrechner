@@ -178,7 +178,10 @@
   <h2>GCode-Dateien hochladen</h2>
   <input type="file" id="gcodeInput" accept=".gcode" multiple>
   <button id="processButton">Berechnen</button>
-
+  
+  <!-- Hinweis unter dem Uploadfeld -->
+  <p style="font-size: 14px; color: #666; margin: 5px 0 15px 0;">Nur mit Anycubic Next geslicete Dateien hochladen.</p>
+  
   <div id="fileInfo"></div>
   <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
 
@@ -318,20 +321,16 @@
       });
 
       const outputHtml = `
-        <div class="gcode-result" id="gcode-${file.name}">
-          <div class="accordion"><span>${file.name}</span></div>
-          <div class="panel">
-            <p><strong>Materialtyp:</strong> ${materialType}</p>
-            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
-            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
-          </div>
+        <div class="gcode-result" data-filename="${file.name}">
+          <h4>${file.name}</h4>
+          <p>Materialkosten: ${materialCost.toFixed(2)} CHF</p>
+          <p>Zeitkosten: ${timeCost.toFixed(2)} CHF</p>
+          <p>Stromkosten: ${energyCost.toFixed(2)} CHF</p>
+          <p><strong>Gesamtkosten: ${totalFileCost.toFixed(2)} CHF</strong></p>
+          <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Ergebnis löschen</button>
         </div>
       `;
+
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
       addAccordionListeners();
@@ -340,8 +339,12 @@
   }
 
   document.getElementById('processButton').addEventListener('click', () => {
-    const files = document.getElementById('gcodeInput').files;
-    for (let i = 0; i < files.length; i++) processGCodeFile(files[i]);
+    const input = document.getElementById('gcodeInput');
+    const files = input.files;
+    for (let i = 0; i < files.length; i++) {
+      processGCodeFile(files[i]);
+    }
+    input.value = ''; // Uploadfeld leeren nach Verarbeitung
   });
 
   document.getElementById('clearAllButton').addEventListener('click', () => {
@@ -352,7 +355,7 @@
 </script>
 
 <footer>
-  © 2025 piodeer. All rights reserved. Created with Github & ChatGPT.
+  <p>© 2025 3D Druck Kostenrechner</p>
 </footer>
 
 </body>
