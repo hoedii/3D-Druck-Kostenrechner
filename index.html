@@ -332,6 +332,29 @@
             <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
         </div>
+          <button onclick="downloadPDF()">Als PDF exportieren</button>
+
+  <!-- jsPDF & html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script>
+    // PDF Export
+    async function downloadPDF() {
+      const element = document.getElementById("result-table");
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+
+      const { jsPDF } = window.jspdf;
+      const pdf = new jsPDF("p", "mm", "a4");
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("druckkosten.pdf");
+    }
       `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
