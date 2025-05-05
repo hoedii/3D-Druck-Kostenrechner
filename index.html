@@ -158,6 +158,13 @@
     .active::after {
       content: " ▲";
     }
+    footer {
+      text-align: center;
+      font-size: 12px;
+      color: #777;
+      margin-top: 50px;
+      padding: 10px 0;
+    }
   </style>
 </head>
 <body>
@@ -280,7 +287,7 @@
         printTime = convertTimeToHours(printTimeStr);
       } else if (timeMatch2) {
         printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = ${Math.round(printTime * 60)} Minuten;
+        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
       } else if (timeMatch3) {
         printTimeStr = timeMatch3[1].trim();
         printTime = convertTimeToHours(printTimeStr);
@@ -289,7 +296,7 @@
         printTime = 0;
       }
 
-      const pricePerKg = costConfig[material_price_per_kg_${materialType.toUpperCase()}] || 0;
+      const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
       const materialCost = usedFilament / 1000 * pricePerKg;
 
       let timeCost = 0;
@@ -310,7 +317,7 @@
         energyCost
       });
 
-      const outputHtml = 
+      const outputHtml = `
         <div class="gcode-result" id="gcode-${file.name}">
           <div class="accordion"><span>${file.name}</span></div>
           <div class="panel">
@@ -324,7 +331,7 @@
             <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
           </div>
         </div>
-      ;
+      `;
       document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
       updateTotalCosts();
       addAccordionListeners();
@@ -343,6 +350,10 @@
     updateTotalCosts();
   });
 </script>
+
+<footer>
+  © 2025 piodeer. All rights reserved. Created with Github & ChatGPT.
+</footer>
 
 </body>
 </html>
