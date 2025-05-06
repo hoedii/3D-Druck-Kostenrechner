@@ -1,365 +1,536 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <link rel="icon" href="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" type="image/png">
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>3D Druck Kostenrechner</title>
-  <style>
-    /* Dein vorhandenes CSS bleibt unverändert */
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f9;
-      margin: 0;
-      padding: 0;
-    }
-    header {
-      background-color: #4CAF50;
-      color: white;
-      padding: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 15px;
-    }
-    header img {
-      height: 50px;
-    }
-    .container {
-      max-width: 800px;
-      margin: 20px auto;
-      padding: 20px;
-      background-color: white;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    }
-    h2 {
-      font-size: 24px;
-      margin-bottom: 15px;
-    }
-    input[type="file"] {
-      padding: 10px;
-      margin: 10px 0;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      width: 100%;
-    }
-    button {
-      background-color: #4CAF50;
-      color: white;
-      padding: 15px 20px;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      width: 100%;
-      margin-top: 10px;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .output {
-      margin-top: 20px;
-    }
-    .output p {
-      font-size: 18px;
-      margin: 10px 0;
-    }
-    .error {
-      color: red;
-    }
-    .result-header {
-      font-size: 20px;
-      font-weight: bold;
-      margin-top: 20px;
-    }
-    .clear-button {
-      background-color: #ccc;
-      color: #333;
-      padding: 8px 12px;
-      border-radius: 4px;
-      font-size: 14px;
-      width: auto;
-      margin: 20px 0 0 0;
-      display: inline-block;
-      cursor: pointer;
-    }
-    .clear-button:hover {
-      background-color: #bbb;
-    }
-    .accordion {
-      margin-top: 10px;
-      background-color: #f1f1f1;
-      color: #444;
-      cursor: pointer;
-      padding: 15px;
-      width: 96%;
-      border: none;
-      text-align: left;
-      outline: none;
-      font-size: 18px;
-      transition: 0.4s;
-      border-radius: 4px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .active, .accordion:hover {
-      background-color: #ccc;
-    }
-    .panel {
-      padding: 0 18px;
-      display: none;
-      overflow: hidden;
-      background-color: #f7f7f7;
-      border-left: 4px solid #4CAF50;
-    }
-    .delete-button {
-      background-color: #ff4d4d;
-      color: white;
-      padding: 5px 10px;
-      border-radius: 4px;
-      font-size: 14px;
-      cursor: pointer;
-      margin-top: 10px;
-    }
-    .delete-button:hover {
-      background-color: #e60000;
-    }
-    .total-cost-container {
-      display: none;
-      margin-top: 20px;
-      padding: 20px;
-      background-color: #f9f9f9;
-      border-radius: 8px;
-      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-      text-align: left;
-    }
-    .total-cost-container p {
-      font-size: 18px;
-      margin: 5px 0;
-    }
-    #clearAllButton {
-      background-color: transparent;
-      color: black;
-      padding: 0;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      display: block;
-      text-align: left;
-      width: 100%;
-      margin-top: 20px;
-      text-decoration: underline;
-    }
-    .accordion::after {
-      content: " ▼";
-      font-size: 18px;
-    }
-    .active::after {
-      content: " ▲";
-    }
-    footer {
-      text-align: center;
-      font-size: 12px;
-      color: #777;
-      margin-top: 50px;
-      padding: 10px 0;
-    }
-  </style>
+<link rel="icon" href="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" type="image/png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>3D Druck Kostenrechner</title>
+<style>
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background-color: #f4f4f9;
+margin: 0;
+padding: 0;
+}
+header {
+background-color: #4CAF50;
+color: white;
+padding: 20px;
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 15px;
+}
+header img {
+height: 50px;
+}
+.container {
+max-width: 800px;
+margin: 20px auto;
+padding: 20px;
+background-color: white;
+border-radius: 8px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+h2 {
+font-size: 24px;
+margin-bottom: 15px;
+}
+input[type="file"] {
+padding: 10px;
+margin: 10px 0;
+border: 1px solid #ccc;
+border-radius: 4px;
+width: 100%;
+}
+button {
+background-color: #4CAF50;
+color: white;
+padding: 15px 20px;
+border: none;
+border-radius: 4px;
+font-size: 16px;
+cursor: pointer;
+width: 100%;
+margin-top: 10px;
+}
+button:hover {
+background-color: #45a049;
+}
+.output {
+margin-top: 20px;
+}
+.output p {
+font-size: 18px;
+margin: 10px 0;
+}
+.error {
+color: red;
+}
+.result-header {
+font-size: 20px;
+font-weight: bold;
+margin-top: 20px;
+}
+.clear-button {
+background-color: #ccc;
+color: #333;
+padding: 8px 12px;
+border-radius: 4px;
+font-size: 14px;
+width: auto;
+margin: 20px 0 0 0;
+display: inline-block;
+cursor: pointer;
+}
+.clear-button:hover {
+background-color: #bbb;
+}
+.accordion {
+margin-top: 10px;
+background-color: #f1f1f1;
+color: #444;
+cursor: pointer;
+padding: 15px;
+width: 96%;
+border: none;
+text-align: left;
+outline: none;
+font-size: 18px;
+transition: 0.4s;
+border-radius: 4px;
+display: flex;
+justify-content: space-between;
+align-items: center;
+}
+.active, .accordion:hover {
+background-color: #ccc;
+}
+.panel {
+padding: 0 18px;
+display: none;
+overflow: hidden;
+background-color: #f7f7f7;
+border-left: 4px solid #4CAF50;
+}
+.delete-button {
+background-color: #ff4d4d;
+color: white;
+padding: 5px 10px;
+border-radius: 4px;
+font-size: 14px;
+cursor: pointer;
+margin-top: 10px;
+}
+.delete-button:hover {
+background-color: #e60000;
+}
+.total-cost-container {
+display: none;
+margin-top: 20px;
+padding: 20px;
+background-color: #f9f9f9;
+border-radius: 8px;
+box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+text-align: left;
+}
+.total-cost-container p {
+font-size: 18px;
+margin: 5px 0;
+}
+#clearAllButton {
+background-color: transparent;
+color: black;
+padding: 0;
+border: none;
+font-size: 16px;
+cursor: pointer;
+display: block;
+text-align: left;
+width: 100%;
+margin-top: 20px;
+text-decoration: underline;
+}
+.accordion::after {
+content: " ▼";
+font-size: 18px;
+}
+.active::after {
+content: " ▲";
+}
+footer {
+text-align: center;
+font-size: 12px;
+color: #777;
+margin-top: 50px;
+padding: 10px 0;
+}
+</style>
 </head>
 <body>
-
 <header>
-  <img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" alt="Logo">
-  <h1>3D Druck Kostenrechner</h1>
+<img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" alt="Logo">
+<h1>3D Druck Kostenrechner</h1>
 </header>
-
 <div class="container">
-  <h2>GCode-Dateien hochladen</h2>
-  <p style="font-size: 12px; color: #777;">Nur mit dem Anycubic Next geslicete Dateien sind kompatibel.</p>
-  <input type="file" id="gcodeInput" accept=".gcode" multiple>
-  <button id="processButton">Berechnen</button>
-
-  <div id="fileInfo"></div>
-  <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
-
-  <div class="total-cost-container" id="totalCostContainer">
-    <h3>Gesamtkosten</h3>
-    <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
-    <p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
-    <p>Stromkosten: <span id="totalEnergyCost">0.00 CHF</span></p>
-    <p><strong>Total: <span id="totalCost">0.00 CHF</span></strong></p>
-  </div>
+<h2>Dateien hochladen</h2>
+<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer geslicete GCode-Dateien (FDM) und PM4U-Dateien (Resin).</p>
+<input type="file" id="gcodeInput" accept=".gcode,.pm4u" multiple>
+<button id="processButton">Berechnen</button>
+<div id="fileInfo"></div>
+<button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
+<div class="total-cost-container" id="totalCostContainer">
+<h3>Gesamtkosten</h3>
+<p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
+<p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
+<p>Stromkosten: <span id="totalEnergyCost">0.00 CHF</span></p>
+<p><strong>Total: <span id="totalCost">0.00 CHF</span></strong></p>
 </div>
-
+</div>
 <script>
-  const costConfig = {
-    time_price_per_hour: 2.75,
-    time_price_per_hour5: 1.75,
-    time_price_per_hour10: 1.1,
-    material_price_per_kg_PLA: 24.0,
-    material_price_per_kg_ABS: 23.0,
-    material_price_per_kg_TPU: 28.0,
-    material_price_per_kg_PETG: 18.0,
-    material_price_per_kg_ASA: 32.0,
-    energy_price_per_kwh: 0.40
-  };
-
-  let allResults = [];
-
-  function convertTimeToHours(timeStr) {
-    const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-    if (timeMatch) {
-      const days = parseInt(timeMatch[1] || 0, 10);
-      const hours = parseInt(timeMatch[2] || 0, 10);
-      const minutes = parseInt(timeMatch[3] || 0, 10);
-      const seconds = parseInt(timeMatch[4] || 0, 10);
-      return days * 24 + hours + minutes / 60 + seconds / 3600;
-    }
-    return 0;
-  }
-
-  function updateTotalCosts() {
-    let totalMaterialCost = 0, totalTimeCost = 0, totalEnergyCost = 0;
-
-    allResults.forEach(result => {
-      totalMaterialCost += result.materialCost;
-      totalTimeCost += result.timeCost;
-      totalEnergyCost += result.energyCost;
-    });
-
-    const totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
-
-    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
-    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
-    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
-    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
-
-    document.getElementById('totalCostContainer').style.display = totalCost > 0 ? 'block' : 'none';
-    document.getElementById('clearAllButton').style.display = totalCost > 0 ? 'block' : 'none';
-  }
-
-  function deleteResult(button, fileName) {
-    const resultDiv = button.closest('.gcode-result');
-    resultDiv.remove();
-    allResults = allResults.filter(r => r.fileName !== fileName);
-    updateTotalCosts();
-  }
-
-  function addAccordionListeners() {
-    const acc = document.getElementsByClassName('accordion');
-    for (let i = 0; i < acc.length; i++) {
-      acc[i].removeEventListener('click', toggleAccordion);
-      acc[i].addEventListener('click', toggleAccordion);
-    }
-  }
-
-  function toggleAccordion() {
-    this.classList.toggle('active');
-    const panel = this.nextElementSibling;
-    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
-  }
-
-  function processGCodeFile(file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const gcodeText = event.target.result;
-      let usedFilament = 0, printTime = 0, materialType = 'PLA', printTimeStr = '';
-
-      const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
-      if (materialMatch) {
-        try {
-          const materialInfo = JSON.parse(materialMatch[1]);
+const costConfig = {
+time_price_per_hour: 2.75,
+time_price_per_hour5: 1.75,
+time_price_per_hour10: 1.1,
+material_price_per_kg_PLA: 24.0,
+material_price_per_kg_ABS: 23.0,
+material_price_per_kg_TPU: 28.0,
+material_price_per_kg_PETG: 18.0,
+material_price_per_kg_ASA: 32.0,
+material_price_per_kg_TOUGH_RESIN: 56.0,
+material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
+material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
+energy_price_per_kwh: 0.40, // Already present, price matched
+clean_price_TOUGH_RESIN: 5.0, // Added as requested
+clean_price_ABS_LIKE_RESIN_PRO: 3.0,
+clean_price_ABS_LIKE_RESIN_V2: 3.0
+};
+let allResults = [];
+function convertTimeToHours(timeStr) {
+const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
+if (timeMatch) {
+const days = parseInt(timeMatch[1] || 0, 10);
+const hours = parseInt(timeMatch[2] || 0, 10);
+const minutes = parseInt(timeMatch[3] || 0, 10);
+const seconds = parseInt(timeMatch[4] || 0, 10);
+return days * 24 + hours + minutes / 60 + seconds / 3600;
+}
+return 0;
+}
+function formatTimeFromSeconds(totalSeconds) {
+if (isNaN(totalSeconds) || totalSeconds < 0) return 'Unbekannt';
+const days = Math.floor(totalSeconds / (3600 * 24));
+const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+const minutes = Math.floor((totalSeconds % 3600) / 60);
+const seconds = Math.floor(totalSeconds % 60);
+let timeStr = '';
+if (days > 0) timeStr += `${days}d `;
+if (hours > 0 || days > 0) timeStr += `${hours}h `;
+if (minutes > 0 || hours > 0 || days > 0) timeStr += `${minutes}m `;
+if (seconds > 0 || timeStr === '') timeStr += `${seconds}s`;
+return timeStr.trim();
+}
+function updateTotalCosts() {
+let totalMaterialCost = 0, totalTimeCost = 0, totalEnergyCost = 0;
+allResults.forEach(result => {
+totalMaterialCost += result.materialCost;
+totalTimeCost += result.timeCost;
+totalEnergyCost += result.energyCost;
+});
+const totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
+document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
+document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
+document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
+document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
+document.getElementById('totalCostContainer').style.display = totalCost > 0 ? 'block' : 'none';
+document.getElementById('clearAllButton').style.display = totalCost > 0 ? 'block' : 'none';
+}
+function deleteResult(button, fileName) {
+const resultDiv = button.closest('.gcode-result');
+if (resultDiv) resultDiv.remove();
+allResults = allResults.filter(r => r.fileName !== fileName);
+updateTotalCosts();
+}
+function addAccordionListeners() {
+const acc = document.getElementsByClassName('accordion');
+for (let i = 0; i < acc.length; i++) {
+acc[i].removeEventListener('click', toggleAccordion); // Prevent multiple listeners
+acc[i].addEventListener('click', toggleAccordion);
+}
+}
+function toggleAccordion() {
+this.classList.toggle('active');
+const panel = this.nextElementSibling;
+panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+}
+function processGCodeFile(file) {
+const reader = new FileReader();
+reader.onload = function(event) {
+const gcodeText = event.target.result;
+let usedFilament = 0, printTime = 0, materialType = 'PLA', printTimeStr = '';
+// Materialerkennung basierend auf ; paint_info
+const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+if (materialMatch) {
+try {
+const materialInfo = JSON.parse(materialMatch[1]);
           if (Array.isArray(materialInfo) && materialInfo.length > 0) {
             materialType = materialInfo[0].material_type || 'PLA';
-          }
-        } catch {}
-      }
-
-      const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
-      if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
-
-      const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-      const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
-      const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
-
-      if (timeMatch1) {
-        printTimeStr = timeMatch1[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      } else if (timeMatch2) {
-        printTime = parseInt(timeMatch2[1], 10) / 3600;
-        printTimeStr = `${Math.round(printTime * 60)} Minuten`;
-      } else if (timeMatch3) {
-        printTimeStr = timeMatch3[1].trim();
-        printTime = convertTimeToHours(printTimeStr);
-      } else {
-        printTimeStr = 'Unbekannt';
-        printTime = 0;
-      }
-
-      const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
-      const materialCost = usedFilament / 1000 * pricePerKg;
-
-      let timeCost = 0;
-      if (printTime <= 5) timeCost = printTime * costConfig.time_price_per_hour;
-      else if (printTime <= 10) timeCost = printTime * costConfig.time_price_per_hour5;
-      else timeCost = printTime * costConfig.time_price_per_hour10;
-
-      const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
-      const totalFileCost = materialCost + timeCost + energyCost;
-
-      allResults.push({
-        fileName: file.name,
-        materialType,
-        usedFilament,
-        printTimeStr,
-        materialCost,
-        timeCost,
-        energyCost
-      });
-
-      const outputHtml = `
-        <div class="gcode-result" id="gcode-${file.name}">
-          <div class="accordion"><span>${file.name}</span></div>
-          <div class="panel">
-            <p><strong>Materialtyp:</strong> ${materialType}</p>
-            <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
-            <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
-            <p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-            <p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-            <p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
-            <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-            <button class="delete-button" onclick="deleteResult(this, '${file.name}')">Löschen</button>
-          </div>
-        </div>
-        
-      `;
-      document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-      updateTotalCosts();
-      addAccordionListeners();
-    };
+} else if (materialInfo.material_type) { // Also check if it's not an array but object (fallback, less likely based on source)
+materialType = materialInfo.material_type;
+}
+} catch (e) { console.error("Error parsing GCode material info:", e); }
+}
+// Filamentverbraucherkennung
+const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
+if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]); // Gruppe 1 enthält den Wert
+// Druckerzeit-Erkennung
+const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+const timeMatch2 = gcodeText.match(/;TIME:(\d+)/); // Time in seconds
+const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+if (timeMatch1) {
+printTimeStr = timeMatch1[1].trim(); // Gruppe 1
+printTime = convertTimeToHours(printTimeStr);
+} else if (timeMatch2) {
+const timeInSeconds = parseInt(timeMatch2[1], 10); // Gruppe 1
+printTime = timeInSeconds / 3600; // Convert seconds to hours
+printTimeStr = formatTimeFromSeconds(timeInSeconds); // Format seconds for display
+} else if (timeMatch3) {
+printTimeStr = timeMatch3[1].trim(); // Gruppe 1
+printTime = convertTimeToHours(printTimeStr);
+} else {
+printTimeStr = 'Unbekannt';
+printTime = 0;
+}
+const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
+const materialCost = usedFilament / 1000 * pricePerKg; // usedFilament is in grams, convert to kg
+let timeCost = 0;
+if (printTime > 0) {
+if (printTime <= 5) timeCost = printTime * costConfig.time_price_per_hour;
+else if (printTime <= 10) timeCost = printTime * costConfig.time_price_per_hour5;
+else timeCost = printTime * costConfig.time_price_per_hour10;
+}
+const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh; // printTime is already in hours
+const totalFileCost = materialCost + timeCost + energyCost;
+allResults.push({
+fileName: file.name,
+materialType,
+usedFilament,
+volume: null, // Not applicable for GCode filament
+printTimeStr,
+materialCost,
+timeCost,
+energyCost
+});
+const outputHtml = `
+<div class="gcode-result" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}"> <!-- Use cleaned file name for ID -->
+<div class="accordion"><span>${file.name}</span></div>
+<div class="panel">
+<p><strong>Materialtyp:</strong> ${materialType}</p>
+<p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
+<p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+<p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+<p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+<p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+<p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button> <!-- Escape quotes for JS -->
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+updateTotalCosts();
+addAccordionListeners();
+};
+reader.onerror = function(e) {
+console.error(`Error reading GCode file ${file.name}:`, e);
+const outputHtml = `
+<div class="gcode-result error" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
+<div class="panel">
+<p>Die Datei konnte nicht gelesen werden.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+};
 reader.readAsText(file);
 }
+function processPM4UFile(file) {
+const reader = new FileReader();
+reader.onload = function(event) {
+const pm4uContent = event.target.result;
+JSZip.loadAsync(pm4uContent).then(function(zip) {
+// Process print_info.json to get time and volume
+zip.file("print_info.json").async("string").then(function(printInfoContent) {
+const printInfo = JSON.parse(printInfoContent);
+const printTimeSeconds = printInfo.print_time; // Time in seconds
+const volume = printInfo.volume; // Volume (assume cm³)
 
-document.getElementById('processButton').addEventListener('click', () => {
-  const files = document.getElementById('gcodeInput').files;
-  for (let i = 0; i < files.length; i++) processGCodeFile(files[i]);
+// *** START OF MODIFICATION FOR PM4U VOLUME ***
+const volumeGrams = volume * 1.15; // Neu: Volumen von cm³ in Gramm umrechnen mit Faktor 1.15
+// *** END OF MODIFICATION FOR PM4U VOLUME ***
 
-  // Leeren des Upload-Felds nach dem Klick auf "Berechnen"
-  document.getElementById('gcodeInput').value = '';
+// Process anycubic_photon_resins.pwsp to get material name
+zip.file("anycubic_photon_resins.pwsp").async("string").then(function(resinsContent) {
+let materialTypeName = 'Unbekannt'; // Default material type
+// Use regex to extract the first active resin name
+const activeResinsRegex = /"active_resins":\s*\[\s*"([^"]+)"/;
+const activeResinMatch = resinsContent.match(activeResinsRegex);
+if (activeResinMatch && activeResinMatch[1]) {
+materialTypeName = activeResinMatch[1]; // Group 1 contains the resin name
+} else {
+console.warn("No active_resins found or format unexpected in anycubic_photon_resins.pwsp. Using 'Unbekannt'.");
+}
+// Calculate costs
+const printTimeHours = printTimeSeconds / 3600; // Convert seconds to hours
+let timeCost = 0;
+if (printTimeHours > 0) {
+if (printTimeHours <= 5) timeCost = printTimeHours * costConfig.time_price_per_hour;
+else if (printTimeHours <= 10) timeCost = printTimeHours * costConfig.time_price_per_hour5;
+else timeCost = printTimeHours * costConfig.time_price_per_hour10;
+}
+// Add clean price based on material type
+const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); // Create key matching config format
+const cleanPrice = costConfig[cleanPriceKey] || 0; // Lookup clean price, default to 0 if not found
+timeCost += cleanPrice; // Add clean price to time cost
+const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh; // printTime is already in hours
+// Calculate Material Cost using costConfig based on extracted materialTypeName and volume
+let materialPrice = 0;
+// Construct the lookup key based on the pattern in costConfig (assuming name match)
+const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); // Ensure key format matches
+const configPricePerLitre = costConfig[materialConfigKey]; // Lookup price in config
+if (typeof configPricePerLitre === 'number' && configPricePerLitre > 0 && volume > 0) {
+// Interpret the config price as price per litre (1000 cm³ or 1000 ml)
+// Volume from print_info.json is in cm³. 1 cm³ is approx 1 ml.
+materialPrice = (volume / 1000) * configPricePerLitre; // volume in cm³ / 1000 = volume in Litres
+} else {
+console.warn(`Resin material "${materialTypeName}" or config price invalid for material cost. Material cost set to 0. Looked for key: ${materialConfigKey}`);
+materialPrice = 0;
+}
+const totalFileCost = materialPrice + timeCost + energyCost; // Use updated timeCost
+const printTimeStr = formatTimeFromSeconds(printTimeSeconds); // Format seconds
+allResults.push({
+fileName: file.name,
+materialType: materialTypeName, // Use the extracted resin name
+usedFilament: null, // Not applicable for PM4U resin
+volume, // Speichern weiterhin das Originalvolumen in cm³
+printTimeStr,
+materialCost: materialPrice,
+timeCost, // This now includes the clean price
+energyCost
 });
-
+const outputHtml = `
+<div class="gcode-result" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}"> <!-- Use cleaned file name for ID -->
+<div class="accordion"><span>${file.name}</span></div>
+<div class="panel">
+<p><strong>Materialtyp:</strong> ${materialTypeName}</p>
+<p><strong>Verwendetes Volumen:</strong> ${volumeGrams.toFixed(2)} g</p> <!-- Geändert: volumeGrams anzeigen mit Einheit 'g' -->
+<p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
+<p><strong>Materialkosten:</strong> ${materialPrice.toFixed(2)} CHF</p>
+<p><strong>Zeitkosten (inkl. Reinigung):</strong> ${timeCost.toFixed(2)} CHF</p> <!-- Updated label -->
+<p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+<p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
+<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button> <!-- Escape quotes for JS -->
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+updateTotalCosts();
+addAccordionListeners();
+}).catch(function(e) {
+console.error("Error reading anycubic_photon_resins.pwsp or extracting resin name:", e);
+const outputHtml = `
+<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Fehler bei Resin-Info</span></div>
+<div class="panel">
+<p>Fehler beim Lesen der Resin-Informationen aus der Datei.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+});
+}).catch(function(e) {
+console.error("Error reading print_info.json:", e);
+const outputHtml = `
+<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Fehler bei Druckinfo</span></div>
+<div class="panel">
+<p>Fehler beim Lesen der Druckinformationen (Zeit, Volumen) aus der Datei.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+});
+}).catch(function(e) {
+console.error(`Error unzipping pm4u file ${file.name}:`, e);
+const outputHtml = `
+<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Fehler beim Entpacken</span></div>
+<div class="panel">
+<p>Fehler beim Entpacken der Datei.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+});
+};
+reader.onerror = function(e) {
+console.error(`Error reading pm4u file ${file.name}:`, e);
+const outputHtml = `
+<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
+<div class="panel">
+<p>Die Datei konnte nicht gelesen werden.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+};
+reader.readAsArrayBuffer(file); // PM4U needs to be read as ArrayBuffer for JSZip
+}
+document.getElementById('processButton').addEventListener('click', () => {
+const files = document.getElementById('gcodeInput').files; // ID is gcodeInput, but accepts both types
+if (files.length === 0) {
+console.log("Keine Dateien ausgewählt.");
+return;
+}
+// DO NOT CLEAR PREVIOUS RESULTS HERE to allow cumulative calculations
+for (let i = 0; i < files.length; i++) {
+const file = files[i];
+const fileName = file.name.toLowerCase();
+if (fileName.endsWith('.gcode')) {
+processGCodeFile(file);
+} else if (fileName.endsWith('.pm4u')) {
+processPM4UFile(file);
+} else {
+const outputHtml = `
+<div class="gcode-result error" id="unsupported-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+<div class="accordion"><span>${file.name} - Nicht unterstütztes Format</span></div>
+<div class="panel">
+<p>Dieses Dateiformat (.${fileName.split('.').pop()}) wird nicht unterstützt.</p>
+</div>
+</div>
+`;
+document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+addAccordionListeners();
+}
+}
+// Leeren des Upload-Felds nach dem Klick auf "Berechnen"
+document.getElementById('gcodeInput').value = '';
+});
 document.getElementById('clearAllButton').addEventListener('click', () => {
-  allResults = [];
-  document.getElementById('fileInfo').innerHTML = '';
-  updateTotalCosts();
+allResults = [];
+document.getElementById('fileInfo').innerHTML = '';
+updateTotalCosts();
 });
 </script>
-
 <footer>
-  © 2025 piodeer. All rights reserved. Created with Github & ChatGPT.
+© 2025 piodeer. All rights reserved. Created with Github & ChatGPT.
 </footer>
-
 </body>
 </html>
