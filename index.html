@@ -201,8 +201,8 @@ material_price_per_kg_ASA: 32.0,
 material_price_per_kg_TOUGH_RESIN: 56.0,
 material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
 material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
-energy_price_per_kwh: 0.40, // Already present, price matched
-clean_price_TOUGH_RESIN: 5.0, // Added as requested
+energy_price_per_kwh: 0.40,
+clean_price_TOUGH_RESIN: 5.0,
 clean_price_ABS_LIKE_RESIN_PRO: 3.0,
 clean_price_ABS_LIKE_RESIN_V2: 3.0
 };
@@ -255,7 +255,7 @@ updateTotalCosts();
 function addAccordionListeners() {
 const acc = document.getElementsByClassName('accordion');
 for (let i = 0; i < acc.length; i++) {
-acc[i].removeEventListener('click', toggleAccordion); // Prevent multiple listeners
+acc[i].removeEventListener('click', toggleAccordion);
 acc[i].addEventListener('click', toggleAccordion);
 }
 }
@@ -269,71 +269,84 @@ const reader = new FileReader();
 reader.onload = function(event) {
 const gcodeText = event.target.result;
 let usedFilament = 0, printTime = 0, materialType = 'PLA', printTimeStr = '';
-// Materialerkennung basierend auf ; paint_info
 const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
 if (materialMatch) {
 try {
 const materialInfo = JSON.parse(materialMatch[1]);
-          if (Array.isArray(materialInfo) && materialInfo.length > 0) {
-            materialType = materialInfo[0].material_type || 'PLA';
-} else if (materialInfo.material_type) { // Also check if it's not an array but object (fallback, less likely based on source)
+if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+materialType = materialInfo.material_type || 'PLA';
+} else if (materialInfo.material_type) {
 materialType = materialInfo.material_type;
 }
 } catch (e) { console.error("Error parsing GCode material info:", e); }
 }
-// Filamentverbraucherkennung
 const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
-if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]); // Gruppe 1 enthält den Wert
-// Druckerzeit-Erkennung
+if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
 const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-const timeMatch2 = gcodeText.match(/;TIME:(\d+)/); // Time in seconds
+const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
 const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
 if (timeMatch1) {
-printTimeStr = timeMatch1[1].trim(); // Gruppe 1
+printTimeStr = timeMatch1[1].trim();
 printTime = convertTimeToHours(printTimeStr);
 } else if (timeMatch2) {
-const timeInSeconds = parseInt(timeMatch2[1], 10); // Gruppe 1
-printTime = timeInSeconds / 3600; // Convert seconds to hours
-printTimeStr = formatTimeFromSeconds(timeInSeconds); // Format seconds for display
+const timeInSeconds = parseInt(timeMatch2[1], 10);
+printTime = timeInSeconds / 3600;
+printTimeStr = formatTimeFromSeconds(timeInSeconds);
 } else if (timeMatch3) {
-printTimeStr = timeMatch3[1].trim(); // Gruppe 1
+printTimeStr = timeMatch3[1].trim();
 printTime = convertTimeToHours(printTimeStr);
 } else {
 printTimeStr = 'Unbekannt';
 printTime = 0;
 }
 const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
-const materialCost = usedFilament / 1000 * pricePerKg; // usedFilament is in grams, convert to kg
+const materialCost = usedFilament / 1000 * pricePerKg;
 let timeCost = 0;
+let baseTimeCostFormula = '';
+let timePricePerHour = 0;
 if (printTime > 0) {
-if (printTime <= 5) timeCost = printTime * costConfig.time_price_per_hour;
-else if (printTime <= 10) timeCost = printTime * costConfig.time_price_per_hour5;
-else timeCost = printTime * costConfig.time_price_per_hour10;
+if (printTime <= 5) {
+timeCost = printTime * costConfig.time_price_per_hour;
+timePricePerHour = costConfig.time_price_per_hour;
 }
-const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh; // printTime is already in hours
+else if (printTime <= 10) {
+timeCost = printTime * costConfig.time_price_per_hour5;
+timePricePerHour = costConfig.time_price_per_hour5;
+}
+else {
+timeCost = printTime * costConfig.time_price_per_hour10;
+timePricePerHour = costConfig.time_price_per_hour10;
+}
+baseTimeCostFormula = `${printTime.toFixed(2)} h * ${timePricePerHour.toFixed(2)} CHF/h = ${timeCost.toFixed(2)} CHF`;
+} else {
+baseTimeCostFormula = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
+}
+const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
 const totalFileCost = materialCost + timeCost + energyCost;
 allResults.push({
 fileName: file.name,
 materialType,
 usedFilament,
-volume: null, // Not applicable for GCode filament
+volume: null,
 printTimeStr,
 materialCost,
 timeCost,
 energyCost
 });
+const materialTooltip = `${usedFilament.toFixed(2)} g / 1000 g/kg * ${pricePerKg.toFixed(2)} CHF/kg = ${materialCost.toFixed(2)} CHF`;
+const energyTooltip = `${printTime.toFixed(2)} h * 0.25 kW * ${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh = ${energyCost.toFixed(2)} CHF`;
 const outputHtml = `
-<div class="gcode-result" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}"> <!-- Use cleaned file name for ID -->
+<div class="gcode-result" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
 <div class="accordion"><span>${file.name}</span></div>
 <div class="panel">
 <p><strong>Materialtyp:</strong> ${materialType}</p>
 <p><strong>Verwendetes Filament:</strong> ${usedFilament.toFixed(2)} g</p>
 <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
-<p><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
-<p><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
-<p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+<p title="${materialTooltip}"><strong>Materialkosten:</strong> ${materialCost.toFixed(2)} CHF</p>
+<p title="${baseTimeCostFormula}"><strong>Zeitkosten:</strong> ${timeCost.toFixed(2)} CHF</p>
+<p title="${energyTooltip}"><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
 <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button> <!-- Escape quotes for JS -->
+<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button>
 </div>
 </div>
 `;
@@ -361,77 +374,79 @@ const reader = new FileReader();
 reader.onload = function(event) {
 const pm4uContent = event.target.result;
 JSZip.loadAsync(pm4uContent).then(function(zip) {
-// Process print_info.json to get time and volume
 zip.file("print_info.json").async("string").then(function(printInfoContent) {
 const printInfo = JSON.parse(printInfoContent);
-const printTimeSeconds = printInfo.print_time; // Time in seconds
-const volume = printInfo.volume; // Volume (assume cm³)
-
-// *** START OF MODIFICATION FOR PM4U VOLUME ***
-const volumeGrams = volume * 1.15; // Neu: Volumen von cm³ in Gramm umrechnen mit Faktor 1.15
-// *** END OF MODIFICATION FOR PM4U VOLUME ***
-
-// Process anycubic_photon_resins.pwsp to get material name
+const printTimeSeconds = printInfo.print_time;
+const volume = printInfo.volume;
+const volumeGrams = volume * 1.15;
 zip.file("anycubic_photon_resins.pwsp").async("string").then(function(resinsContent) {
-let materialTypeName = 'Unbekannt'; // Default material type
-// Use regex to extract the first active resin name
+let materialTypeName = 'Unbekannt';
 const activeResinsRegex = /"active_resins":\s*\[\s*"([^"]+)"/;
 const activeResinMatch = resinsContent.match(activeResinsRegex);
 if (activeResinMatch && activeResinMatch[1]) {
-materialTypeName = activeResinMatch[1]; // Group 1 contains the resin name
+materialTypeName = activeResinMatch[1];
 } else {
 console.warn("No active_resins found or format unexpected in anycubic_photon_resins.pwsp. Using 'Unbekannt'.");
 }
-// Calculate costs
-const printTimeHours = printTimeSeconds / 3600; // Convert seconds to hours
+const printTimeHours = printTimeSeconds / 3600;
 let timeCost = 0;
+let baseTimeCost = 0;
+let timePricePerHour = 0;
 if (printTimeHours > 0) {
-if (printTimeHours <= 5) timeCost = printTimeHours * costConfig.time_price_per_hour;
-else if (printTimeHours <= 10) timeCost = printTimeHours * costConfig.time_price_per_hour5;
-else timeCost = printTimeHours * costConfig.time_price_per_hour10;
+if (printTimeHours <= 5) {
+baseTimeCost = printTimeHours * costConfig.time_price_per_hour;
+timePricePerHour = costConfig.time_price_per_hour;
 }
-// Add clean price based on material type
-const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); // Create key matching config format
-const cleanPrice = costConfig[cleanPriceKey] || 0; // Lookup clean price, default to 0 if not found
-timeCost += cleanPrice; // Add clean price to time cost
-const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh; // printTime is already in hours
-// Calculate Material Cost using costConfig based on extracted materialTypeName and volume
+else if (printTimeHours <= 10) {
+baseTimeCost = printTimeHours * costConfig.time_price_per_hour5;
+timePricePerHour = costConfig.time_price_per_hour5;
+}
+else {
+baseTimeCost = printTimeHours * costConfig.time_price_per_hour10;
+timePricePerHour = costConfig.time_price_per_hour10;
+}
+}
+const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+const cleanPrice = costConfig[cleanPriceKey] || 0;
+timeCost = baseTimeCost + cleanPrice;
+const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh;
 let materialPrice = 0;
-// Construct the lookup key based on the pattern in costConfig (assuming name match)
-const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase(); // Ensure key format matches
-const configPricePerLitre = costConfig[materialConfigKey]; // Lookup price in config
+const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+const configPricePerLitre = costConfig[materialConfigKey];
+let materialTooltip = 'Materialkosten unbekannt (Preis oder Volumen 0)';
 if (typeof configPricePerLitre === 'number' && configPricePerLitre > 0 && volume > 0) {
-// Interpret the config price as price per litre (1000 cm³ or 1000 ml)
-// Volume from print_info.json is in cm³. 1 cm³ is approx 1 ml.
-materialPrice = (volume / 1000) * configPricePerLitre; // volume in cm³ / 1000 = volume in Litres
+materialPrice = (volume / 1000) * configPricePerLitre;
+materialTooltip = `${volume.toFixed(2)} cm³ / 1000 cm³/l * ${configPricePerLitre.toFixed(2)} CHF/l = ${materialPrice.toFixed(2)} CHF`;
 } else {
 console.warn(`Resin material "${materialTypeName}" or config price invalid for material cost. Material cost set to 0. Looked for key: ${materialConfigKey}`);
 materialPrice = 0;
 }
-const totalFileCost = materialPrice + timeCost + energyCost; // Use updated timeCost
-const printTimeStr = formatTimeFromSeconds(printTimeSeconds); // Format seconds
+const totalFileCost = materialPrice + timeCost + energyCost;
+const printTimeStr = formatTimeFromSeconds(printTimeSeconds);
+const timeTooltip = `${baseTimeCost.toFixed(2)} CHF (Zeit: ${printTimeHours.toFixed(2)} h * ${timePricePerHour.toFixed(2)} CHF/h) + ${cleanPrice.toFixed(2)} CHF (Reinigung) = ${timeCost.toFixed(2)} CHF`;
+const energyTooltip = `${printTimeHours.toFixed(2)} h * 0.25 kW * ${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh = ${energyCost.toFixed(2)} CHF`;
 allResults.push({
 fileName: file.name,
-materialType: materialTypeName, // Use the extracted resin name
-usedFilament: null, // Not applicable for PM4U resin
-volume, // Speichern weiterhin das Originalvolumen in cm³
+materialType: materialTypeName,
+usedFilament: null,
+volume,
 printTimeStr,
 materialCost: materialPrice,
-timeCost, // This now includes the clean price
+timeCost,
 energyCost
 });
 const outputHtml = `
-<div class="gcode-result" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}"> <!-- Use cleaned file name for ID -->
+<div class="gcode-result" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
 <div class="accordion"><span>${file.name}</span></div>
 <div class="panel">
 <p><strong>Materialtyp:</strong> ${materialTypeName}</p>
-<p><strong>Verwendetes Volumen:</strong> ${volumeGrams.toFixed(2)} g</p> <!-- Geändert: volumeGrams anzeigen mit Einheit 'g' -->
+<p><strong>Verwendetes Volumen:</strong> ${volumeGrams.toFixed(2)} g</p>
 <p><strong>Gebrauchte Zeit:</strong> ${printTimeStr}</p>
-<p><strong>Materialkosten:</strong> ${materialPrice.toFixed(2)} CHF</p>
-<p><strong>Zeitkosten (inkl. Reinigung):</strong> ${timeCost.toFixed(2)} CHF</p> <!-- Updated label -->
-<p><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
+<p title="${materialTooltip}"><strong>Materialkosten:</strong> ${materialPrice.toFixed(2)} CHF</p>
+<p title="${timeTooltip}"><strong>Zeitkosten (inkl. Reinigung):</strong> ${timeCost.toFixed(2)} CHF</p>
+<p title="${energyTooltip}"><strong>Stromkosten:</strong> ${energyCost.toFixed(2)} CHF</p>
 <p><strong>Gesamtkosten:</strong> ${totalFileCost.toFixed(2)} CHF</p>
-<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button> <!-- Escape quotes for JS -->
+<button class="delete-button" onclick="deleteResult(this, '${file.name.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button>
 </div>
 </div>
 `;
@@ -439,7 +454,7 @@ document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
 updateTotalCosts();
 addAccordionListeners();
 }).catch(function(e) {
-console.error("Error reading anycubic_photon_resins.pwsp or extracting resin name:", e);
+console.error(`Error reading anycubic_photon_resins.pwsp or extracting resin name for ${file.name}:`, e);
 const outputHtml = `
 <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
 <div class="accordion"><span>${file.name} - Fehler bei Resin-Info</span></div>
@@ -452,7 +467,7 @@ document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
 addAccordionListeners();
 });
 }).catch(function(e) {
-console.error("Error reading print_info.json:", e);
+console.error(`Error reading print_info.json for ${file.name}:`, e);
 const outputHtml = `
 <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
 <div class="accordion"><span>${file.name} - Fehler bei Druckinfo</span></div>
@@ -491,15 +506,14 @@ const outputHtml = `
 document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
 addAccordionListeners();
 };
-reader.readAsArrayBuffer(file); // PM4U needs to be read as ArrayBuffer for JSZip
+reader.readAsArrayBuffer(file);
 }
 document.getElementById('processButton').addEventListener('click', () => {
-const files = document.getElementById('gcodeInput').files; // ID is gcodeInput, but accepts both types
+const files = document.getElementById('gcodeInput').files;
 if (files.length === 0) {
 console.log("Keine Dateien ausgewählt.");
 return;
 }
-// DO NOT CLEAR PREVIOUS RESULTS HERE to allow cumulative calculations
 for (let i = 0; i < files.length; i++) {
 const file = files[i];
 const fileName = file.name.toLowerCase();
@@ -520,7 +534,6 @@ document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
 addAccordionListeners();
 }
 }
-// Leeren des Upload-Felds nach dem Klick auf "Berechnen"
 document.getElementById('gcodeInput').value = '';
 });
 document.getElementById('clearAllButton').addEventListener('click', () => {
@@ -531,8 +544,8 @@ updateTotalCosts();
 </script>
 <footer>
 <p style="font-size: 12px; color: #888;">
-  © 2025 piodeer. All rights reserved. Created with 
-  <a href="https://github.com/hoedii/3D-Druck-Kostenrechner" style="color: inherit; text-decoration: none;" target="_blank">Github</a> & ChatGPT.
+© 2025 piodeer. All rights reserved. Created with
+<a href="https://github.com/hoedii/3D-Druck-Kostenrechner" style="color: inherit; text-decoration: none;" target="_blank">Github</a> & ChatGPT.
 </p>
 </footer>
 </body>
