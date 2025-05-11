@@ -194,7 +194,8 @@ time_price_per_hour: 2.75,
 time_price_per_hour5: 1.75,
 time_price_per_hour10: 1.1,
 material_price_per_kg_PLA: 24.0,
-material_price_per_kg_PLA_Matte: 30.0,
+material_price_per_kg_PLA_MATTE: 30.0,
+material_price_per_kg_PLA_PLUS: 26.0,
 material_price_per_kg_ABS: 23.0,
 material_price_per_kg_TPU: 28.0,
 material_price_per_kg_PETG: 18.0,
@@ -349,7 +350,7 @@ printTimeStr = 'Unbekannt';
 printTime = 0;
 totalSeconds = 0;
 }
-const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
+const pricePerKg = costConfig[`material_price_per_kg_${materialType.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase()}`] || 0;
 const materialCost = usedFilament / 1000 * pricePerKg;
 let timeCost = 0;
 let timePricePerHour = 0;
