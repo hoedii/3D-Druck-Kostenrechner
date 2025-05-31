@@ -21,6 +21,7 @@ display: flex;
 align-items: center;
 justify-content: center;
 gap: 15px;
+position: relative;
 }
 header img {
 height: 50px;
@@ -127,13 +128,13 @@ margin-top: 10px;
 background-color: #e60000;
 }
 .total-cost-container {
-display: none;
-margin-top: 20px;
-padding: 20px;
-background-color: #f9f9f9;
-border-radius: 8px;
-box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-text-align: left;
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: left;
+    margin-bottom: 10px;
 }
 .total-cost-container p {
 font-size: 18px;
@@ -166,413 +167,1403 @@ color: #777;
 margin-top: 50px;
 padding: 10px 0;
 }
+
+/* Settings Modal Styles */
+.settings-button {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.download-button {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    position: absolute;
+    right: 150px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    height: 35px;
+    line-height: 1;
+}
+
+.download-button svg {
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+    margin-top: -2px;
+}
+
+.download-button:hover, .settings-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.modal {
+display: none;
+position: fixed;
+z-index: 1000;
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+background-color: #fefefe;
+margin: 5% auto;
+padding: 20px;
+border-radius: 8px;
+width: 80%;
+max-width: 800px;
+max-height: 80vh;
+overflow-y: auto;
+}
+
+.close {
+color: #aaa;
+float: right;
+font-size: 28px;
+font-weight: bold;
+cursor: pointer;
+}
+
+.close:hover {
+color: #000;
+}
+
+.settings-grid {
+display: grid;
+grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+gap: 15px;
+margin-top: 20px;
+}
+
+.settings-group {
+background: #f5f5f5;
+padding: 15px;
+border-radius: 4px;
+}
+
+.settings-group h3 {
+margin-top: 0;
+margin-bottom: 10px;
+font-size: 16px;
+}
+
+.setting-item {
+margin-bottom: 10px;
+padding-right: 10px;
+}
+
+.setting-item label {
+display: block;
+margin-bottom: 5px;
+font-size: 14px;
+}
+
+.setting-item input {
+width: calc(100% - 16px);
+padding: 8px;
+border: 1px solid #ddd;
+border-radius: 4px;
+}
+
+.settings-actions {
+margin-top: 20px;
+display: flex;
+gap: 10px;
+justify-content: flex-end;
+}
+
+.settings-actions button {
+width: auto;
+padding: 10px 20px;
+}
+
+.import-export-buttons {
+display: flex;
+gap: 10px;
+margin-bottom: 20px;
+}
+
+.import-export-buttons button {
+width: auto;
+padding: 10px 20px;
+background-color: #666;
+}
+
+.import-export-buttons button:hover {
+background-color: #555;
+}
+
+.file-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.file-input-group {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.file-input-group label {
+    flex: 1;
+}
+
+.file-input-group input[type="file"] {
+    flex: 1;
+}
+
+#fileStatus {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 50%;
+    margin-left: 10px;
+}
+
+.folder-button {
+    display: none !important;
+}
+
+.export-group {
+    display: none !important;
+}
+
+#exportBtn {
+    display: none !important;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.button-group button {
+    flex: 1;
+}
+
+.button-group button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.input-section {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.custom-file-input {
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 10px;
+    background-color: #fff;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.custom-file-input:hover {
+    background-color: #f8f8f8;
+}
+
+.button-text {
+    font-weight: normal;
+}
+
+.file-status {
+    margin-left: 20px;
+    font-size: 14px;
+}
+
+.folder-status {
+    margin-left: 20px;
+    font-size: 14px;
+}
+
+.subtle-button {
+    background: none;
+    border: none;
+    color: #888;
+    padding: 5px 0;
+    font-size: 13px;
+    cursor: pointer;
+    width: 100%;
+    text-align: left;
+    margin-top: 5px;
+}
+
+.subtle-button:hover {
+    color: #666;
+    text-decoration: underline;
+}
 </style>
 </head>
 <body>
 <header>
 <img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" alt="Logo">
 <h1>3D Druck Kostenrechner</h1>
+<button id="downloadBtn" class="download-button" title="Exportieren">
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+    </svg>
+</button>
+<button id="settingsButton" class="settings-button">Einstellungen</button>
 </header>
 <div class="container">
 <h2>Dateien hochladen</h2>
 <p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next geslicete GCode-Dateien (FDM) und PhotonWorkshop geslicete pm4u-Dateien (Resin).</p>
-<input type="file" id="gcodeInput" accept=".gcode,.pm4u" multiple>
+<div class="file-actions">
+    <div class="input-section">
+        <div class="file-input-group">
+            <input type="file" id="gcodeInput" accept=".gcode,.pm4u" multiple style="display: none;">
+            <label for="gcodeInput" style="display: block; width: 100%;">
+                <div class="custom-file-input">
+                    <span class="button-text">Dateien auswählen</span>
+                    <span class="file-status" style="color: #666;"></span>
+                </div>
+            </label>
+        </div>
+        <div class="file-input-group">
+            <input type="file" id="folderInput" accept=".zip" style="display: none;">
+            <label for="folderInput" id="selectFolderBtn" style="display: block; width: 100%;">
+                <div class="subtle-button">
+                    <span class="button-text">ZIP Datei auswählen</span>
+                    <span class="folder-status" style="color: #666; margin-left: 10px; font-size: 13px;"></span>
+                </div>
+            </label>
+        </div>
+    </div>
+</div>
 <button id="processButton">Berechnen</button>
 <div id="fileInfo"></div>
 <button id="clearAllButton" style="display: none;">Alle Ergebnisse löschen</button>
 <div class="total-cost-container" id="totalCostContainer">
-<h3>Gesamtkosten</h3>
-<p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
-<p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
-<p>Stromkosten: <span id="totalEnergyCost">0.00 CHF</span></p>
-<p><strong>Total: <span id="totalCost">0.00 CHF</span></strong></p>
+    <h3>Gesamtkosten</h3>
+    <p>Materialkosten: <span id="totalMaterialCost">0.00 CHF</span></p>
+    <p>Zeitkosten: <span id="totalTimeCost">0.00 CHF</span></p>
+    <p>Stromkosten: <span id="totalEnergyCost">0.00 CHF</span></p>
+    <p><strong>Total: <span id="totalCost">0.00 CHF</span></strong></p>
+</div>
+<div class="export-group">
+    <button id="exportBtn" class="export-button">Exportieren</button>
 </div>
 </div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Kosteneinstellungen</h2>
+        
+        <div class="import-export-buttons">
+            <button id="exportSettings">Einstellungen exportieren</button>
+            <button id="importSettings">Einstellungen importieren</button>
+            <input type="file" id="importFile" accept=".json" style="display: none;">
+        </div>
+
+        <div class="settings-grid">
+            <div class="settings-group">
+                <h3>Zeitkosten</h3>
+                <div class="setting-item">
+                    <label>Preis pro Stunde (bis 5h)</label>
+                    <input type="number" step="0.01" id="time_price_per_hour">
+                </div>
+                <div class="setting-item">
+                    <label>Preis pro Stunde (5-10h)</label>
+                    <input type="number" step="0.01" id="time_price_per_hour5">
+                </div>
+                <div class="setting-item">
+                    <label>Preis pro Stunde (über 10h)</label>
+                    <input type="number" step="0.01" id="time_price_per_hour10">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>FDM Materialkosten (pro kg)</h3>
+                <div class="setting-item">
+                    <label>PLA</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_PLA">
+                </div>
+                <div class="setting-item">
+                    <label>ABS</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_ABS">
+                </div>
+                <div class="setting-item">
+                    <label>TPU</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_TPU">
+                </div>
+                <div class="setting-item">
+                    <label>PETG</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_PETG">
+                </div>
+                <div class="setting-item">
+                    <label>ASA</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_ASA">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Resin Materialkosten (pro kg)</h3>
+                <div class="setting-item">
+                    <label>TOUGH RESIN</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_TOUGH_RESIN">
+                </div>
+                <div class="setting-item">
+                    <label>ABS LIKE RESIN V2</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_ABS_LIKE_RESIN_V2">
+                </div>
+                <div class="setting-item">
+                    <label>ABS LIKE RESIN PRO</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_ABS_LIKE_RESIN_PRO">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Resin Reinigungskosten</h3>
+                <div class="setting-item">
+                    <label>TOUGH RESIN</label>
+                    <input type="number" step="0.01" id="clean_price_TOUGH_RESIN">
+                </div>
+                <div class="setting-item">
+                    <label>ABS LIKE RESIN PRO</label>
+                    <input type="number" step="0.01" id="clean_price_ABS_LIKE_RESIN_PRO">
+                </div>
+                <div class="setting-item">
+                    <label>ABS LIKE RESIN V2</label>
+                    <input type="number" step="0.01" id="clean_price_ABS_LIKE_RESIN_V2">
+                </div>
+            </div>
+
+            <div class="settings-group">
+                <h3>Sonstige Kosten</h3>
+                <div class="setting-item">
+                    <label>Strompreis pro kWh</label>
+                    <input type="number" step="0.01" id="energy_price_per_kwh">
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-actions">
+            <button id="resetSettings" style="background-color: #ff4d4d;">Zurücksetzen</button>
+        </div>
+    </div>
+</div>
+
 <script>
 const costConfig = {
-time_price_per_hour: 2.75,
-time_price_per_hour5: 1.75,
-time_price_per_hour10: 1.1,
-material_price_per_kg_PLA: 25.0,
-material_price_per_kg_ABS: 23.0,
-material_price_per_kg_TPU: 28.0,
-material_price_per_kg_PETG: 18.0,
-material_price_per_kg_ASA: 32.0,
-material_price_per_kg_TOUGH_RESIN: 56.0,
-material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
-material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
-energy_price_per_kwh: 0.40,
-clean_price_TOUGH_RESIN: 5.0,
-clean_price_ABS_LIKE_RESIN_PRO: 5.0,
-clean_price_ABS_LIKE_RESIN_V2: 3.0
+    time_price_per_hour: 2.75,
+    time_price_per_hour5: 1.75,
+    time_price_per_hour10: 1.1,
+    material_price_per_kg_PLA: 25.0,
+    material_price_per_kg_ABS: 23.0,
+    material_price_per_kg_TPU: 28.0,
+    material_price_per_kg_PETG: 18.0,
+    material_price_per_kg_ASA: 32.0,
+    material_price_per_kg_TOUGH_RESIN: 56.0,
+    material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
+    material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
+    energy_price_per_kwh: 0.40,
+    clean_price_TOUGH_RESIN: 5.0,
+    clean_price_ABS_LIKE_RESIN_PRO: 5.0,
+    clean_price_ABS_LIKE_RESIN_V2: 3.0
 };
+
+// Standardeinstellungen als Referenz
+const defaultSettings = { ...costConfig };
+
+// Lade gespeicherte Einstellungen wenn sie existieren
+const savedSettings = localStorage.getItem('costSettings');
+if (savedSettings) {
+    try {
+        const parsedSettings = JSON.parse(savedSettings);
+        Object.assign(costConfig, parsedSettings);
+    } catch (e) {
+        console.error("Error loading settings:", e);
+    }
+}
+
 let allResults = [];
 const savedResults = localStorage.getItem('savedResults');
 if (savedResults) {
-try {
-allResults = JSON.parse(savedResults);
-allResults = allResults.filter(result => result && result.fileName && result.materialCost !== undefined && result.timeCost !== undefined && result.energyCost !== undefined);
-renderResults();
-} catch (e) {
-console.error("Error loading results from localStorage:", e);
-localStorage.removeItem('savedResults');
-allResults = [];
+    try {
+        allResults = JSON.parse(savedResults);
+        allResults = allResults.filter(result => 
+            result && 
+            result.fileName && 
+            result.materialCost !== undefined && 
+            result.timeCost !== undefined && 
+            result.energyCost !== undefined
+        );
+    } catch (e) {
+        console.error("Error loading results from localStorage:", e);
+        localStorage.removeItem('savedResults');
+        allResults = [];
+    }
 }
+
+// Initialisiere die Seite wenn das DOM geladen ist
+document.addEventListener('DOMContentLoaded', function() {
+    initializeSettingsInputs();
+    if (allResults.length > 0) {
+        recalculateAllResults();
+    }
+});
+
+function recalculateAllResults() {
+    const currentResults = [...allResults];
+    allResults = [];
+    currentResults.forEach(result => {
+        if (result.type === 'gcode') {
+            const printTime = convertTimeToHours(result.printTimeStr);
+            const pricePerKg = costConfig[`material_price_per_kg_${result.materialType.toUpperCase()}`] || 0;
+            
+            // Recalculate material cost
+            result.materialCost = result.usedFilament / 1000 * pricePerKg;
+            result.materialTooltip = `Gewicht (${(result.usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${result.materialCost.toFixed(2)} CHF`;
+            
+            // Recalculate time cost
+            let timeCost = 0;
+            let timePricePerHour = 0;
+            if (printTime > 0) {
+                if (printTime <= 5) {
+                    timeCost = printTime * costConfig.time_price_per_hour;
+                    timePricePerHour = costConfig.time_price_per_hour;
+                } else if (printTime <= 10) {
+                    timeCost = printTime * costConfig.time_price_per_hour5;
+                    timePricePerHour = costConfig.time_price_per_hour5;
+                } else {
+                    timeCost = printTime * costConfig.time_price_per_hour10;
+                    timePricePerHour = costConfig.time_price_per_hour10;
+                }
+            }
+            result.timeCost = timeCost;
+            result.timeTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`;
+            
+            // Recalculate energy cost
+            result.energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
+            result.energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${result.energyCost.toFixed(2)} CHF`;
+            
+        } else if (result.type === 'pm4u') {
+            const printTimeHours = result.printTimeStr ? convertTimeToHours(result.printTimeStr) : 0;
+            const materialConfigKey = 'material_price_per_kg_' + result.materialType.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+            const configPricePerKg = costConfig[materialConfigKey];
+            const resinDensity = 1.1;
+            
+            // Recalculate material cost
+            if (typeof configPricePerKg === 'number' && configPricePerKg > 0 && result.volume > 0) {
+                const volumeInLitres = result.volume / 1000;
+                const massInKg = volumeInLitres * resinDensity;
+                result.materialCost = massInKg * configPricePerKg;
+                result.materialTooltip = `Gewicht (${(result.volume * resinDensity).toFixed(2)} g) * Preis pro kg (${configPricePerKg.toFixed(2)} CHF/kg) = ${result.materialCost.toFixed(2)} CHF`;
+            }
+            
+            // Recalculate time cost
+            let baseTimeCost = 0;
+            let timePricePerHour = 0;
+            if (printTimeHours > 0) {
+                if (printTimeHours <= 5) {
+                    baseTimeCost = printTimeHours * costConfig.time_price_per_hour;
+                    timePricePerHour = costConfig.time_price_per_hour;
+                } else if (printTimeHours <= 10) {
+                    baseTimeCost = printTimeHours * costConfig.time_price_per_hour5;
+                    timePricePerHour = costConfig.time_price_per_hour5;
+                } else {
+                    baseTimeCost = printTimeHours * costConfig.time_price_per_hour10;
+                    timePricePerHour = costConfig.time_price_per_hour10;
+                }
+            }
+            
+            const cleanPriceKey = 'clean_price_' + result.materialType.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+            const cleanPrice = costConfig[cleanPriceKey] || 0;
+            result.timeCost = baseTimeCost + cleanPrice;
+            result.timeTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) + Reinigung (${cleanPrice.toFixed(2)} CHF) = ${result.timeCost.toFixed(2)} CHF`;
+            
+            // Recalculate energy cost
+            result.energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh;
+            result.energyTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${result.energyCost.toFixed(2)} CHF`;
+        }
+        
+        result.totalFileCost = result.materialCost + result.timeCost + result.energyCost;
+        allResults.push(result);
+    });
+    
+    renderResults();
 }
+
+// Settings Modal Functionality
+const modal = document.getElementById("settingsModal");
+const settingsBtn = document.getElementById("settingsButton");
+const closeBtn = document.getElementsByClassName("close")[0];
+const saveSettingsBtn = document.getElementById("saveSettings");
+const resetSettingsBtn = document.getElementById("resetSettings");
+const exportSettingsBtn = document.getElementById("exportSettings");
+const importSettingsBtn = document.getElementById("importSettings");
+const importFileInput = document.getElementById("importFile");
+
+// Initialize settings inputs with current values and highlight changes
+function initializeSettingsInputs() {
+    for (const [key, value] of Object.entries(costConfig)) {
+        const input = document.getElementById(key);
+        if (input) {
+            input.value = value;
+            // Prüfe ob der Wert vom Standard abweicht
+            if (Math.abs(value - defaultSettings[key]) > 0.001) {
+                input.style.color = '#ff0000';
+            } else {
+                input.style.color = '#000000';
+            }
+            
+            // Füge Event Listener für Änderungen hinzu
+            input.addEventListener('input', function() {
+                const newValue = parseFloat(this.value);
+                if (!isNaN(newValue)) {
+                    // Aktualisiere die Textfarbe
+                    if (Math.abs(newValue - defaultSettings[key]) > 0.001) {
+                        this.style.color = '#ff0000';
+                    } else {
+                        this.style.color = '#000000';
+                    }
+                    
+                    // Speichere den neuen Wert
+                    costConfig[key] = newValue;
+                    localStorage.setItem('costSettings', JSON.stringify(costConfig));
+                    
+                    // Aktualisiere die Berechnungen
+                    recalculateAllResults();
+                }
+            });
+        }
+    }
+}
+
+// Event Listeners for Settings Modal
+settingsBtn.onclick = () => {
+    initializeSettingsInputs();
+    modal.style.display = "block";
+};
+
+closeBtn.onclick = () => {
+    modal.style.display = "none";
+};
+
+window.onclick = (event) => {
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+};
+
+// Reset settings to default values
+resetSettingsBtn.onclick = () => {
+    Object.assign(costConfig, defaultSettings);
+    localStorage.setItem('costSettings', JSON.stringify(costConfig));
+    initializeSettingsInputs();
+    recalculateAllResults();
+};
+
+// Verstecke den grauen Export-Button in der UI
+document.getElementById('exportBtn').style.display = 'none';
+
+// Export settings
+exportSettingsBtn.onclick = () => {
+    const settingsJson = JSON.stringify(costConfig, null, 2);
+    const blob = new Blob([settingsJson], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'einstellungen.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
+
+// Import settings
+importSettingsBtn.onclick = () => importFileInput.click();
+importFileInput.onchange = async (event) => {
+    const file = event.target.files[0];
+    if (file) {
+        await loadSettingsFromFile(file);
+    }
+    event.target.value = '';
+};
+
 function renderResults() {
-const fileInfoDiv = document.getElementById('fileInfo');
-fileInfoDiv.innerHTML = '';
-allResults.forEach(result => {
-if (!result || !result.fileName) return;
-let outputHtml = '';
-const cleanFileName = result.fileName.replace(/[^a-zA-Z0-9]/g, '');
-const idPrefix = result.type === 'gcode' ? 'gcode-' : 'pm4u-';
-const volumeOrFilamentDisplay = result.type === 'gcode'
-? `<p><strong>Verwendetes Filament:</strong> ${result.usedFilament !== null ? result.usedFilament.toFixed(2) + ' g' : 'N/A'}</p>`
-: `<p><strong>Verwendetes Resin:</strong> ${result.volume !== null ? (result.volume * 1.15).toFixed(2) + ' g' : 'N/A'}</p>`;
-const timeCostLabel = result.type === 'pm4u' ? 'Zeitkosten (inkl. Reinigung)' : 'Zeitkosten';
-outputHtml = `
-<div class="gcode-result" id="${idPrefix}${cleanFileName}">
-<div class="accordion"><span>${result.fileName}</span></div>
-<div class="panel">
-<p><strong>Materialtyp:</strong> ${result.materialType || 'Unbekannt'}</p>
-${volumeOrFilamentDisplay}
-<p><strong>Druckzeit:</strong> ${result.printTimeStr || 'Unbekannt'}</p>
-<p title="${result.materialTooltip || ''}"><strong>Materialkosten:</strong> ${result.materialCost !== undefined ? result.materialCost.toFixed(2) + ' CHF' : 'N/A'}</p>
-<p title="${result.timeTooltip || ''}"><strong>${timeCostLabel}:</strong> ${result.timeCost !== undefined ? result.timeCost.toFixed(2) + ' CHF' : 'N/A'}</p>
-<p title="${result.energyTooltip || ''}"><strong>Stromkosten:</strong> ${result.energyCost !== undefined ? result.energyCost.toFixed(2) + ' CHF' : 'N/A'}</p>
-<p><strong>Gesamtkosten:</strong> ${result.totalFileCost !== undefined ? result.totalFileCost.toFixed(2) + ' CHF' : 'N/A'}</p>
-<button class="delete-button" onclick="deleteResult(this, '${result.fileName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button>
-</div>
-</div>
-`;
-fileInfoDiv.insertAdjacentHTML('beforeend', outputHtml);
-});
-updateTotalCosts();
-addAccordionListeners();
+    const fileInfoDiv = document.getElementById('fileInfo');
+    fileInfoDiv.innerHTML = '';
+    allResults.forEach(result => {
+        if (!result || !result.fileName) return;
+        let outputHtml = '';
+        const cleanFileName = result.fileName.replace(/[^a-zA-Z0-9]/g, '');
+        const idPrefix = result.type === 'gcode' ? 'gcode-' : 'pm4u-';
+        const volumeOrFilamentDisplay = result.type === 'gcode'
+            ? `<p><strong>Verwendetes Filament:</strong> ${result.usedFilament !== null ? result.usedFilament.toFixed(2) + ' g' : 'N/A'}</p>`
+            : `<p><strong>Verwendetes Resin:</strong> ${result.volume !== null ? (result.volume * 1.15).toFixed(2) + ' g' : 'N/A'}</p>`;
+        const timeCostLabel = result.type === 'pm4u' ? 'Zeitkosten (inkl. Reinigung)' : 'Zeitkosten';
+        outputHtml = `
+        <div class="gcode-result" id="${idPrefix}${cleanFileName}">
+        <div class="accordion"><span>${result.fileName}</span></div>
+        <div class="panel">
+        <p><strong>Materialtyp:</strong> ${result.materialType || 'Unbekannt'}</p>
+        ${volumeOrFilamentDisplay}
+        <p><strong>Druckzeit:</strong> ${result.printTimeStr || 'Unbekannt'}</p>
+        <p title="${result.materialTooltip || ''}"><strong>Materialkosten:</strong> ${result.materialCost !== undefined ? result.materialCost.toFixed(2) + ' CHF' : 'N/A'}</p>
+        <p title="${result.timeTooltip || ''}"><strong>${timeCostLabel}:</strong> ${result.timeCost !== undefined ? result.timeCost.toFixed(2) + ' CHF' : 'N/A'}</p>
+        <p title="${result.energyTooltip || ''}"><strong>Stromkosten:</strong> ${result.energyCost !== undefined ? result.energyCost.toFixed(2) + ' CHF' : 'N/A'}</p>
+        <p><strong>Gesamtkosten:</strong> ${result.totalFileCost !== undefined ? result.totalFileCost.toFixed(2) + ' CHF' : 'N/A'}</p>
+        <button class="delete-button" onclick="deleteResult(this, '${result.fileName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button>
+        </div>
+        </div>
+        `;
+        fileInfoDiv.insertAdjacentHTML('beforeend', outputHtml);
+    });
+    updateTotalCosts();
+    addAccordionListeners();
+
+    // Zeige oder verstecke Buttons basierend auf vorhandenen Ergebnissen
+    const hasResults = allResults.length > 0;
+    document.getElementById('downloadBtn').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('clearAllButton').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('totalCostContainer').style.display = hasResults ? 'block' : 'none';
 }
+
 function convertTimeToHours(timeStr) {
-const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
-if (timeMatch) {
-const days = parseInt(timeMatch[1] || 0, 10);
-const hours = parseInt(timeMatch[2] || 0, 10);
-const minutes = parseInt(timeMatch[3] || 0, 10);
-const seconds = parseInt(timeMatch[4] || 0, 10);
-return days * 24 + hours + minutes / 60 + seconds / 3600;
+    const timeMatch = timeStr.match(/(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/);
+    if (timeMatch) {
+        const days = parseInt(timeMatch[1] || 0, 10);
+        const hours = parseInt(timeMatch[2] || 0, 10);
+        const minutes = parseInt(timeMatch[3] || 0, 10);
+        const seconds = parseInt(timeMatch[4] || 0, 10);
+        return days * 24 + hours + minutes / 60 + seconds / 3600;
+    }
+    return 0;
 }
-return 0;
-}
+
 function formatTimeFromSeconds(totalSeconds) {
-if (isNaN(totalSeconds) || totalSeconds < 0) return 'Unbekannt';
-const days = Math.floor(totalSeconds / (3600 * 24));
-const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
-const minutes = Math.floor((totalSeconds % 3600) / 60);
-const seconds = Math.floor(totalSeconds % 60);
-let timeStr = '';
-if (days > 0) timeStr += `${days}d `;
-if (hours > 0 || days > 0) timeStr += `${hours}h `;
-if (minutes > 0 || hours > 0 || days > 0) timeStr += `${minutes}m `;
-if (seconds > 0 || timeStr === '') timeStr += `${seconds}s`;
-return timeStr.trim();
+    if (isNaN(totalSeconds) || totalSeconds < 0) return 'Unbekannt';
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60);
+    let timeStr = '';
+    if (days > 0) timeStr += `${days}d `;
+    if (hours > 0 || days > 0) timeStr += `${hours}h `;
+    if (minutes > 0 || hours > 0 || days > 0) timeStr += `${minutes}m `;
+    if (seconds > 0 || timeStr === '') timeStr += `${seconds}s`;
+    return timeStr.trim();
 }
+
 function updateTotalCosts() {
-let totalMaterialCost = 0, totalTimeCost = 0, totalEnergyCost = 0;
-allResults.forEach(result => {
-totalMaterialCost += result.materialCost || 0;
-totalTimeCost += result.timeCost || 0;
-totalEnergyCost += result.energyCost || 0;
-});
-const totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
-document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
-document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
-document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
-document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
-document.getElementById('totalCostContainer').style.display = totalCost > 0 ? 'block' : 'none';
-document.getElementById('clearAllButton').style.display = totalCost > 0 ? 'block' : 'none';
+    let totalMaterialCost = 0, totalTimeCost = 0, totalEnergyCost = 0;
+    allResults.forEach(result => {
+        totalMaterialCost += result.materialCost || 0;
+        totalTimeCost += result.timeCost || 0;
+        totalEnergyCost += result.energyCost || 0;
+    });
+    const totalCost = totalMaterialCost + totalTimeCost + totalEnergyCost;
+    document.getElementById('totalMaterialCost').textContent = totalMaterialCost.toFixed(2) + ' CHF';
+    document.getElementById('totalTimeCost').textContent = totalTimeCost.toFixed(2) + ' CHF';
+    document.getElementById('totalEnergyCost').textContent = totalEnergyCost.toFixed(2) + ' CHF';
+    document.getElementById('totalCost').textContent = totalCost.toFixed(2) + ' CHF';
+    document.getElementById('totalCostContainer').style.display = totalCost > 0 ? 'block' : 'none';
+    document.getElementById('clearAllButton').style.display = totalCost > 0 ? 'block' : 'none';
 }
+
 function deleteResult(button, fileName) {
-const resultDiv = button.closest('.gcode-result');
-if (resultDiv) resultDiv.remove();
-allResults = allResults.filter(r => r.fileName !== fileName);
-updateTotalCosts();
-localStorage.setItem('savedResults', JSON.stringify(allResults));
+    const resultDiv = button.closest('.gcode-result');
+    if (resultDiv) resultDiv.remove();
+    allResults = allResults.filter(r => r.fileName !== fileName);
+    updateTotalCosts();
+    localStorage.setItem('savedResults', JSON.stringify(allResults));
 }
+
 function addAccordionListeners() {
-const acc = document.getElementsByClassName('accordion');
-for (let i = 0; i < acc.length; i++) {
-acc[i].removeEventListener('click', toggleAccordion);
-acc[i].addEventListener('click', toggleAccordion);
+    const acc = document.getElementsByClassName('accordion');
+    for (let i = 0; i < acc.length; i++) {
+        acc[i].removeEventListener('click', toggleAccordion);
+        acc[i].addEventListener('click', toggleAccordion);
+    }
 }
-}
+
 function toggleAccordion() {
-this.classList.toggle('active');
-const panel = this.nextElementSibling;
-panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+    this.classList.toggle('active');
+    const panel = this.nextElementSibling;
+    panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
 }
+
 function processGCodeFile(file) {
-const reader = new FileReader();
-reader.onload = function(event) {
-const gcodeText = event.target.result;
-let usedFilament = 0, printTime = 0, materialType = 'PLA', printTimeStr = '';
-const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
-if (materialMatch) {
-try {
-const materialInfo = JSON.parse(materialMatch[1]);
-          if (Array.isArray(materialInfo) && materialInfo.length > 0) {
-            materialType = materialInfo[0].material_type || 'PLA';
-} else if (materialInfo.material_type) {
-materialType = materialInfo.material_type;
+    return new Promise((resolve) => {
+        // Füge die Datei zu originalFiles hinzu
+        if (!originalFiles.includes(file)) {
+            originalFiles.push(file);
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const gcodeText = event.target.result;
+            let usedFilament = 0, printTime = 0, materialType = 'PLA', printTimeStr = '';
+            const materialMatch = gcodeText.match(/; paint_info = (\[.*\])/);
+            if (materialMatch) {
+                try {
+                    const materialInfo = JSON.parse(materialMatch[1]);
+                    if (Array.isArray(materialInfo) && materialInfo.length > 0) {
+                        materialType = materialInfo[0].material_type || 'PLA';
+                    } else if (materialInfo.material_type) {
+                        materialType = materialInfo.material_type;
+                    }
+                } catch (e) { console.error("Error parsing GCode material info:", e); }
+            }
+            const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
+            if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
+            const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
+            const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
+            const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+            let totalSeconds = 0;
+            if (timeMatch1) {
+                printTimeStr = timeMatch1[1].trim();
+                printTime = convertTimeToHours(printTimeStr);
+                totalSeconds = printTime * 3600;
+            } else if (timeMatch2) {
+                totalSeconds = parseInt(timeMatch2[1], 10);
+                printTime = totalSeconds / 3600;
+                printTimeStr = formatTimeFromSeconds(totalSeconds);
+            } else if (timeMatch3) {
+                printTimeStr = timeMatch3[1].trim();
+                printTime = convertTimeToHours(printTimeStr);
+                totalSeconds = printTime * 3600;
+            } else {
+                printTimeStr = 'Unbekannt';
+                printTime = 0;
+                totalSeconds = 0;
+            }
+            const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
+            const materialCost = usedFilament / 1000 * pricePerKg;
+            let timeCost = 0;
+            let timePricePerHour = 0;
+            if (printTime > 0) {
+                if (printTime <= 5) {
+                    timeCost = printTime * costConfig.time_price_per_hour;
+                    timePricePerHour = costConfig.time_price_per_hour;
+                }
+                else if (printTime <= 10) {
+                    timeCost = printTime * costConfig.time_price_per_hour5;
+                    timePricePerHour = costConfig.time_price_per_hour5;
+                }
+                else {
+                    timeCost = printTime * costConfig.time_price_per_hour10;
+                    timePricePerHour = costConfig.time_price_per_hour10;
+                }
+            }
+            const materialTooltip = `Gewicht (${(usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${materialCost.toFixed(2)} CHF`;
+            let timeTooltipText = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
+            if (printTime > 0) { timeTooltipText = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`; }
+            const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
+            const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
+            const totalFileCost = materialCost + timeCost + energyCost;
+            allResults.push({
+                fileName: file.name,
+                type: 'gcode',
+                materialType,
+                usedFilament,
+                volume: null,
+                printTimeStr,
+                materialCost,
+                timeCost,
+                energyCost,
+                totalFileCost,
+                materialTooltip,
+                timeTooltip: timeTooltipText,
+                energyTooltip
+            });
+            renderResults();
+            localStorage.setItem('savedResults', JSON.stringify(allResults));
+            resolve();
+        };
+        
+        reader.onerror = function(e) {
+            console.error(`Error reading GCode file ${file.name}:`, e);
+            const outputHtml = `
+            <div class="gcode-result error" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+            <div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
+            <div class="panel">
+            <p>Die Datei konnte nicht gelesen werden.</p>
+            </div>
+            </div>
+            `;
+            document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+            addAccordionListeners();
+            resolve();
+        };
+        
+        reader.readAsText(file);
+    });
 }
-} catch (e) { console.error("Error parsing GCode material info:", e); }
-}
-const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
-if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
-const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
-const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
-const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
-let totalSeconds = 0;
-if (timeMatch1) {
-printTimeStr = timeMatch1[1].trim();
-printTime = convertTimeToHours(printTimeStr);
-totalSeconds = printTime * 3600;
-} else if (timeMatch2) {
-totalSeconds = parseInt(timeMatch2[1], 10);
-printTime = totalSeconds / 3600;
-printTimeStr = formatTimeFromSeconds(totalSeconds);
-} else if (timeMatch3) {
-printTimeStr = timeMatch3[1].trim();
-printTime = convertTimeToHours(printTimeStr);
-totalSeconds = printTime * 3600;
-} else {
-printTimeStr = 'Unbekannt';
-printTime = 0;
-totalSeconds = 0;
-}
-const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
-const materialCost = usedFilament / 1000 * pricePerKg;
-let timeCost = 0;
-let timePricePerHour = 0;
-if (printTime > 0) {
-if (printTime <= 5) {
-timeCost = printTime * costConfig.time_price_per_hour;
-timePricePerHour = costConfig.time_price_per_hour;
-}
-else if (printTime <= 10) {
-timeCost = printTime * costConfig.time_price_per_hour5;
-timePricePerHour = costConfig.time_price_per_hour5;
-}
-else {
-timeCost = printTime * costConfig.time_price_per_hour10;
-timePricePerHour = costConfig.time_price_per_hour10;
-}
-}
-const materialTooltip = `Gewicht (${(usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${materialCost.toFixed(2)} CHF`;
-let timeTooltipText = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
-if (printTime > 0) { timeTooltipText = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`; }
-const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
-const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
-const totalFileCost = materialCost + timeCost + energyCost;
-allResults.push({
-fileName: file.name,
-type: 'gcode',
-materialType,
-usedFilament,
-volume: null,
-printTimeStr,
-materialCost,
-timeCost,
-energyCost,
-totalFileCost,
-materialTooltip,
-timeTooltip: timeTooltipText,
-energyTooltip
-});
-renderResults();
-localStorage.setItem('savedResults', JSON.stringify(allResults));
-};
-reader.onerror = function(e) {
-console.error(`Error reading GCode file ${file.name}:`, e);
-const outputHtml = `
-<div class="gcode-result error" id="gcode-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
-<div class="panel">
-<p>Die Datei konnte nicht gelesen werden.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
-};
-reader.readAsText(file);
-}
+
 function processPM4UFile(file) {
-const reader = new FileReader();
-reader.onload = function(event) {
-const pm4uContent = event.target.result;
-JSZip.loadAsync(pm4uContent).then(function(zip) {
-zip.file("print_info.json").async("string").then(function(printInfoContent) {
-const printInfo = JSON.parse(printInfoContent);
-const printTimeSeconds = printInfo.print_time;
-const volume = printInfo.volume;
-zip.file("anycubic_photon_resins.pwsp").async("string").then(function(resinsContent) {
-let materialTypeName = 'Unbekannt';
-const activeResinsRegex = /"active_resins":\s*\[\s*"([^"]+)"/;
-const activeResinMatch = resinsContent.match(activeResinsRegex);
-if (activeResinMatch && activeResinMatch[1]) {
-materialTypeName = activeResinMatch[1];
-} else {
-console.warn("No active_resins found or format unexpected in anycubic_photon_resins.pwsp. Using 'Unbekannt'.");
+    return new Promise((resolve) => {
+        // Füge die Datei zu originalFiles hinzu
+        if (!originalFiles.includes(file)) {
+            originalFiles.push(file);
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const pm4uContent = event.target.result;
+            JSZip.loadAsync(pm4uContent).then(function(zip) {
+                zip.file("print_info.json").async("string").then(function(printInfoContent) {
+                    const printInfo = JSON.parse(printInfoContent);
+                    const printTimeSeconds = printInfo.print_time;
+                    const volume = printInfo.volume;
+                    zip.file("anycubic_photon_resins.pwsp").async("string").then(function(resinsContent) {
+                        let materialTypeName = 'Unbekannt';
+                        const activeResinsRegex = /"active_resins":\s*\[\s*"([^"]+)"/;
+                        const activeResinMatch = resinsContent.match(activeResinsRegex);
+                        if (activeResinMatch && activeResinMatch[1]) {
+                            materialTypeName = activeResinMatch[1];
+                        } else {
+                            console.warn("No active_resins found or format unexpected in anycubic_photon_resins.pwsp. Using 'Unbekannt'.");
+                        }
+                        const printTimeHours = printTimeSeconds / 3600;
+                        let baseTimeCost = 0;
+                        let timePricePerHour = 0;
+                        if (printTimeHours > 0) {
+                            if (printTimeHours <= 5) {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour;
+                                timePricePerHour = costConfig.time_price_per_hour;
+                            }
+                            else if (printTimeHours <= 10) {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour5;
+                                timePricePerHour = costConfig.time_price_per_hour5;
+                            }
+                            else {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour10;
+                                timePricePerHour = costConfig.time_price_per_hour10;
+                            }
+                        }
+                        const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                        const cleanPrice = costConfig[cleanPriceKey] || 0;
+                        const timeCost = baseTimeCost + cleanPrice;
+                        const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh;
+                        let materialPrice = 0;
+                        const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                        const configPricePerKg = costConfig[materialConfigKey];
+                        let materialTooltip = 'Materialkosten unbekannt (Preis oder Volumen 0)';
+                        const resinDensity = 1.1;
+                        if (typeof configPricePerKg === 'number' && configPricePerKg > 0 && volume > 0) {
+                            const volumeInLitres = volume / 1000;
+                            const massInKg = volumeInLitres * resinDensity;
+                            materialPrice = massInKg * configPricePerKg;
+                            materialTooltip = `Gewicht (${(volume * resinDensity).toFixed(2)} g) * Preis pro kg (${configPricePerKg.toFixed(2)} CHF/kg) = ${materialPrice.toFixed(2)} CHF`;
+                        } else {
+                            console.warn(`Resin material "${materialTypeName}" or config price invalid for material cost. Material cost set to 0. Looked for key: ${materialConfigKey}`);
+                            materialPrice = 0;
+                        }
+                        const totalFileCost = materialPrice + timeCost + energyCost;
+                        const printTimeStr = formatTimeFromSeconds(printTimeSeconds);
+                        const timeTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) + Reinigung (${cleanPrice.toFixed(2)} CHF) = ${timeCost.toFixed(2)} CHF`;
+                        const energyTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
+                        allResults.push({
+                            fileName: file.name,
+                            type: 'pm4u',
+                            materialType: materialTypeName,
+                            usedFilament: null,
+                            volume,
+                            printTimeStr,
+                            materialCost: materialPrice,
+                            timeCost,
+                            energyCost,
+                            totalFileCost,
+                            materialTooltip,
+                            timeTooltip,
+                            energyTooltip
+                        });
+                        renderResults();
+                        localStorage.setItem('savedResults', JSON.stringify(allResults));
+                        resolve();
+                    }).catch(function(e) {
+                        console.error(`Error reading anycubic_photon_resins.pwsp or extracting resin name for ${file.name}:`, e);
+                        const outputHtml = `
+                        <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+                        <div class="accordion"><span>${file.name} - Fehler bei Resin-Info</span></div>
+                        <div class="panel">
+                        <p>Fehler beim Lesen der Resin-Informationen aus der Datei.</p>
+                        </div>
+                        </div>
+                        `;
+                        document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+                        addAccordionListeners();
+                        resolve();
+                    });
+                }).catch(function(e) {
+                    console.error(`Error reading print_info.json for ${file.name}:`, e);
+                    const outputHtml = `
+                    <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+                    <div class="accordion"><span>${file.name} - Fehler bei Druckinfo</span></div>
+                    <div class="panel">
+                    <p>Fehler beim Lesen der Druckinformationen (Zeit, Volumen) aus der Datei.</p>
+                    </div>
+                    </div>
+                    `;
+                    document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+                    addAccordionListeners();
+                    resolve();
+                });
+            }).catch(function(e) {
+                console.error(`Error unzipping pm4u file ${file.name}:`, e);
+                const outputHtml = `
+                <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+                <div class="accordion"><span>${file.name} - Fehler beim Entpacken</span></div>
+                <div class="panel">
+                <p>Fehler beim Entpacken der Datei.</p>
+                </div>
+                </div>
+                `;
+                document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+                addAccordionListeners();
+                resolve();
+            });
+        };
+        
+        reader.onerror = function(e) {
+            console.error(`Error reading pm4u file ${file.name}:`, e);
+            const outputHtml = `
+            <div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
+            <div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
+            <div class="panel">
+            <p>Die Datei konnte nicht gelesen werden.</p>
+            </div>
+            </div>
+            `;
+            document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
+            addAccordionListeners();
+            resolve();
+        };
+        
+        reader.readAsArrayBuffer(file);
+    });
 }
-const printTimeHours = printTimeSeconds / 3600;
-let baseTimeCost = 0;
-let timePricePerHour = 0;
-if (printTimeHours > 0) {
-if (printTimeHours <= 5) {
-baseTimeCost = printTimeHours * costConfig.time_price_per_hour;
-timePricePerHour = costConfig.time_price_per_hour;
+
+// Speichere die originalen Dateien
+let originalFiles = [];
+
+// Funktion zum Verarbeiten der ausgewählten Dateien
+function processSelectedFiles(files) {
+    const compatibleFiles = Array.from(files).filter(file => 
+        file.name.toLowerCase().endsWith('.gcode') || 
+        file.name.toLowerCase().endsWith('.pm4u')
+    );
+    
+    if (compatibleFiles.length === 0) {
+        alert("Keine kompatiblen Dateien gefunden. Bitte wählen Sie .gcode oder .pm4u Dateien aus.");
+        return;
+    }
+    
+    // Speichere die originalen Dateien
+    originalFiles = originalFiles.concat(compatibleFiles);
+    
+    // Verarbeite jede Datei
+    compatibleFiles.forEach(file => {
+        if (file.name.toLowerCase().endsWith('.gcode')) {
+            processGCodeFile(file);
+        } else if (file.name.toLowerCase().endsWith('.pm4u')) {
+            processPM4UFile(file);
+        }
+    });
 }
-else if (printTimeHours <= 10) {
-baseTimeCost = printTimeHours * costConfig.time_price_per_hour5;
-timePricePerHour = costConfig.time_price_per_hour5;
+
+// Funktion zum Aktualisieren des Datei-Status
+function updateFileStatus() {
+    const fileStatusElement = document.querySelector('.file-status');
+    const folderStatusElement = document.querySelector('.folder-status');
+    const compatibleFiles = selectedFiles.filter(file => 
+        file.name.toLowerCase().endsWith('.gcode') || 
+        file.name.toLowerCase().endsWith('.pm4u')
+    );
+    
+    if (compatibleFiles.length === 0) {
+        fileStatusElement.textContent = '';
+        fileStatusElement.style.color = '#666';
+        folderStatusElement.textContent = '';
+    } else {
+        const gcodeCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.gcode')).length;
+        const pm4uCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.pm4u')).length;
+        
+        let statusText = `${compatibleFiles.length} Datei(en)`;
+        if (gcodeCount > 0 || pm4uCount > 0) {
+            statusText += ' (';
+            if (gcodeCount > 0) {
+                statusText += `${gcodeCount} GCode`;
+                if (pm4uCount > 0) statusText += ', ';
+            }
+            if (pm4uCount > 0) {
+                statusText += `${pm4uCount} PM4U`;
+            }
+            statusText += ')';
+        }
+
+        // Update status based on last input
+        const lastInput = document.getElementById('folderInput').value ? 'folder' : 'file';
+        
+        if (lastInput === 'folder') {
+            fileStatusElement.textContent = '';
+            folderStatusElement.textContent = '';
+        } else {
+            fileStatusElement.textContent = statusText;
+            fileStatusElement.style.color = '#4CAF50';
+            folderStatusElement.textContent = '';
+        }
+    }
 }
-else {
-baseTimeCost = printTimeHours * costConfig.time_price_per_hour10;
-timePricePerHour = costConfig.time_price_per_hour10;
-}
-}
-const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
-const cleanPrice = costConfig[cleanPriceKey] || 0;
-const timeCost = baseTimeCost + cleanPrice;
-const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh;
-let materialPrice = 0;
-const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
-const configPricePerKg = costConfig[materialConfigKey];
-let materialTooltip = 'Materialkosten unbekannt (Preis oder Volumen 0)';
-const resinDensity = 1.1;
-if (typeof configPricePerKg === 'number' && configPricePerKg > 0 && volume > 0) {
-const volumeInLitres = volume / 1000;
-const massInKg = volumeInLitres * resinDensity;
-materialPrice = massInKg * configPricePerKg;
-materialTooltip = `Gewicht (${(volume * resinDensity).toFixed(2)} g) * Preis pro kg (${configPricePerKg.toFixed(2)} CHF/kg) = ${materialPrice.toFixed(2)} CHF`;
-} else {
-console.warn(`Resin material "${materialTypeName}" or config price invalid for material cost. Material cost set to 0. Looked for key: ${materialConfigKey}`);
-materialPrice = 0;
-}
-const totalFileCost = materialPrice + timeCost + energyCost;
-const printTimeStr = formatTimeFromSeconds(printTimeSeconds);
-const timeTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) + Reinigung (${cleanPrice.toFixed(2)} CHF) = ${timeCost.toFixed(2)} CHF`;
-const energyTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
-allResults.push({
-fileName: file.name,
-type: 'pm4u',
-materialType: materialTypeName,
-usedFilament: null,
-volume,
-printTimeStr,
-materialCost: materialPrice,
-timeCost,
-energyCost,
-totalFileCost,
-materialTooltip,
-timeTooltip,
-energyTooltip
+
+// Event Listener für den File Input
+document.getElementById('gcodeInput').addEventListener('change', function(event) {
+    // Speichere die Dateien temporär
+    selectedFiles = Array.from(event.target.files); // Ersetze vorherige Auswahl bei Datei-Upload
+    updateFileStatus();
+    // Zurücksetzen des Inputs
+    this.value = '';
 });
-renderResults();
-localStorage.setItem('savedResults', JSON.stringify(allResults));
-}).catch(function(e) {
-console.error(`Error reading anycubic_photon_resins.pwsp or extracting resin name for ${file.name}:`, e);
-const outputHtml = `
-<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Fehler bei Resin-Info</span></div>
-<div class="panel">
-<p>Fehler beim Lesen der Resin-Informationen aus der Datei.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
+
+// Event Listener für den Process Button
+document.getElementById('processButton').addEventListener('click', function() {
+    if (selectedFiles.length > 0) {
+        // Verstecke die Dateianzeige
+        const fileStatus = document.querySelector('.file-status');
+        const folderStatus = document.querySelector('.folder-status');
+        if (fileStatus) fileStatus.textContent = '';
+        if (folderStatus) folderStatus.textContent = '';
+        
+        // Verarbeite die Dateien
+        processSelectedFiles(selectedFiles);
+        
+        // Leere die selectedFiles nach der Verarbeitung
+        selectedFiles = [];
+    } else {
+        alert("Bitte wählen Sie zuerst Dateien aus.");
+    }
 });
-}).catch(function(e) {
-console.error(`Error reading print_info.json for ${file.name}:`, e);
-const outputHtml = `
-<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Fehler bei Druckinfo</span></div>
-<div class="panel">
-<p>Fehler beim Lesen der Druckinformationen (Zeit, Volumen) aus der Datei.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
+
+// Event Listener für den Folder Input
+document.getElementById('folderInput').addEventListener('change', async function(event) {
+    const files = Array.from(event.target.files);
+    let settingsFound = false;
+    
+    // Prüfe ob eine ZIP-Datei ausgewählt wurde
+    if (files.length === 0 || !files[0].name.toLowerCase().endsWith('.zip')) {
+        alert("Bitte wählen Sie eine ZIP-Datei aus.");
+        this.value = '';
+        return;
+    }
+
+    const file = files[0];
+    
+    try {
+        const zip = new JSZip();
+        const zipContent = await zip.loadAsync(file);
+        
+        // Suche nach einstellungen.json
+        const settingsFile = zipContent.file('einstellungen.json');
+        if (settingsFile) {
+            settingsFound = true;
+            try {
+                const settingsContent = await settingsFile.async('string');
+                const settingsBlob = new Blob([settingsContent], {type: 'application/json'});
+                await loadSettingsFromFile(settingsBlob);
+            } catch (error) {
+                console.error("Fehler beim Verarbeiten der Einstellungsdatei:", error);
+            }
+        }
+        
+        // Extrahiere und verarbeite GCode und PM4U Dateien
+        const compatibleFiles = [];
+        zipContent.forEach((relativePath, zipEntry) => {
+            if (!zipEntry.dir && (
+                relativePath.toLowerCase().endsWith('.gcode') || 
+                relativePath.toLowerCase().endsWith('.pm4u')
+            )) {
+                compatibleFiles.push(zipEntry);
+            }
+        });
+        
+        if (compatibleFiles.length === 0 && !settingsFound) {
+            throw new Error("Keine kompatiblen Dateien in der ZIP-Datei gefunden. Unterstützte Formate: .gcode, .pm4u");
+        }
+        
+        // Verarbeite die gefundenen Dateien
+        for (const zipEntry of compatibleFiles) {
+            try {
+                const content = await zipEntry.async('blob');
+                const file = new File([content], zipEntry.name, {
+                    type: zipEntry.name.toLowerCase().endsWith('.gcode') ? 
+                          'text/plain' : 'application/octet-stream'
+                });
+                
+                // Füge die Datei zu originalFiles hinzu
+                if (!originalFiles.some(f => f.name === file.name)) {
+                    originalFiles.push(file);
+                }
+                
+                if (file.name.toLowerCase().endsWith('.gcode')) {
+                    await processGCodeFile(file);
+                } else if (file.name.toLowerCase().endsWith('.pm4u')) {
+                    await processPM4UFile(file);
+                }
+            } catch (error) {
+                console.error(`Fehler beim Verarbeiten der Datei ${zipEntry.name}:`, error);
+                alert(`Die Datei ${zipEntry.name} konnte nicht verarbeitet werden: ${error.message}`);
+            }
+        }
+        
+        // Aktualisiere die Anzeige
+        renderResults();
+        updateFileStatus();
+        
+        // Zeige Erfolgsmeldung
+        const fileCount = compatibleFiles.length;
+        if (fileCount > 0) {
+            alert(`${fileCount} Datei${fileCount !== 1 ? 'en' : ''} erfolgreich verarbeitet.`);
+        }
+        
+    } catch (error) {
+        console.error("Fehler beim Verarbeiten der ZIP-Datei:", error);
+        alert(error.message || "Fehler beim Verarbeiten der ZIP-Datei. Bitte stellen Sie sicher, dass es sich um eine gültige ZIP-Datei handelt.");
+    } finally {
+        // Zurücksetzen des Inputs
+        this.value = '';
+    }
 });
-}).catch(function(e) {
-console.error(`Error unzipping pm4u file ${file.name}:`, e);
-const outputHtml = `
-<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Fehler beim Entpacken</span></div>
-<div class="panel">
-<p>Fehler beim Entpacken der Datei.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
+
+// Event Listener für den Export-Button
+document.getElementById('downloadBtn').addEventListener('click', async function() {
+    try {
+        const now = new Date();
+        const dateStr = now.toLocaleDateString('de-CH').replace(/\./g, '-');
+        const timeStr = now.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }).replace(':', '-');
+        const defaultName = `3D-Druck-Kostenrechnung_${dateStr}_${timeStr}`;
+        
+        const fileName = prompt('Bitte geben Sie einen Namen für die ZIP-Datei ein:', defaultName);
+        if (!fileName) return;
+        
+        const zip = new JSZip();
+        
+        // Füge alle originalen Dateien hinzu
+        for (const file of originalFiles) {
+            const fileData = await file.arrayBuffer();
+            zip.file(file.name, fileData);
+        }
+        
+        // Füge die aktuellen Einstellungen hinzu
+        zip.file('einstellungen.json', JSON.stringify(costConfig, null, 2));
+        
+        const zipContent = await zip.generateAsync({type: 'blob'});
+        
+        // Erstelle einen Download Link
+        const downloadLink = document.createElement('a');
+        downloadLink.href = URL.createObjectURL(zipContent);
+        downloadLink.download = fileName + '.zip';
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+        URL.revokeObjectURL(downloadLink.href);
+        
+        alert("Die ZIP-Datei wurde erfolgreich erstellt!");
+    } catch (error) {
+        console.error("Fehler beim Exportieren:", error);
+        if (error.name !== 'AbortError') {
+            alert("Fehler beim Erstellen der ZIP-Datei.");
+        }
+    }
 });
-};
-reader.onerror = function(e) {
-console.error(`Error reading pm4u file ${file.name}:`, e);
-const outputHtml = `
-<div class="gcode-result error" id="pm4u-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Fehler beim Lesen</span></div>
-<div class="panel">
-<p>Die Datei konnte nicht gelesen werden.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
-};
-reader.readAsArrayBuffer(file);
-}
-document.getElementById('processButton').addEventListener('click', () => {
-const files = document.getElementById('gcodeInput').files;
-if (files.length === 0) {
-console.log("Keine Dateien ausgewählt.");
-return;
-}
-for (let i = 0; i < files.length; i++) {
-const file = files[i];
-const fileName = file.name.toLowerCase();
-if (fileName.endsWith('.gcode')) {
-processGCodeFile(file);
-} else if (fileName.endsWith('.pm4u')) {
-processPM4UFile(file);
-} else {
-const outputHtml = `
-<div class="gcode-result error" id="unsupported-${file.name.replace(/[^a-zA-Z0-9]/g, '')}">
-<div class="accordion"><span>${file.name} - Nicht unterstütztes Format</span></div>
-<div class="panel">
-<p>Dieses Dateiformat (.${fileName.split('.').pop()}) wird nicht unterstützt.</p>
-</div>
-</div>
-`;
-document.getElementById('fileInfo').insertAdjacentHTML('beforeend', outputHtml);
-addAccordionListeners();
-}
-}
-document.getElementById('gcodeInput').value = '';
-});
+
+// Event Listener für den Clear-Button
 document.getElementById('clearAllButton').addEventListener('click', () => {
-allResults = [];
-document.getElementById('fileInfo').innerHTML = '';
-updateTotalCosts();
-localStorage.removeItem('savedResults');
+    if (confirm('Möchten Sie wirklich alle Ergebnisse löschen?')) {
+        allResults = [];
+        originalFiles = [];
+        selectedFiles = [];
+        document.getElementById('fileInfo').innerHTML = '';
+        document.getElementById('downloadBtn').style.display = 'none';
+        document.getElementById('clearAllButton').style.display = 'none';
+        document.getElementById('totalCostContainer').style.display = 'none';
+        updateFileStatus();
+        updateTotalCosts();
+        localStorage.removeItem('savedResults');
+    }
 });
+
+// Modifiziere die bestehende Funktion zum Aktualisieren der UI
+const originalRenderResults = renderResults;
+renderResults = function() {
+    originalRenderResults();
+    // Zeige die Buttons nur wenn Ergebnisse vorhanden sind
+    const hasResults = allResults.length > 0;
+    document.getElementById('exportBtn').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('clearAllButton').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('totalCostContainer').style.display = hasResults ? 'block' : 'none';
+};
+
+// Event Handler für Einstellungs-Inputs
+function handleSettingInput(event) {
+    const input = event.target;
+    const value = parseFloat(input.value);
+    const key = input.id;
+    
+    // Prüfe ob der neue Wert vom Standard abweicht
+    if (value !== costConfig[key]) {
+        input.style.color = 'red';
+    } else {
+        input.style.color = 'black';
+    }
+}
+
+// Füge Event Listener zu allen Einstellungs-Inputs hinzu
+function addSettingInputListeners() {
+    for (const key in costConfig) {
+        const input = document.getElementById(key);
+        if (input) {
+            input.addEventListener('input', handleSettingInput);
+        }
+    }
+}
+
+// Füge einen Event Listener für das Laden der Seite hinzu
+document.addEventListener('DOMContentLoaded', function() {
+    // Lade gespeicherte Einstellungen
+    const savedSettings = localStorage.getItem('costSettings');
+    if (savedSettings) {
+        try {
+            const parsedSettings = JSON.parse(savedSettings);
+            Object.assign(costConfig, parsedSettings);
+            initializeSettingsInputs();
+        } catch (e) {
+            console.error("Error loading settings:", e);
+        }
+    }
+    
+    // Lade gespeicherte Ergebnisse
+    const savedResults = localStorage.getItem('savedResults');
+    if (savedResults) {
+        try {
+            allResults = JSON.parse(savedResults);
+            allResults = allResults.filter(result => 
+                result && 
+                result.fileName && 
+                result.materialCost !== undefined && 
+                result.timeCost !== undefined && 
+                result.energyCost !== undefined
+            );
+            
+            // Berechne alle Ergebnisse mit den aktuellen Einstellungen neu
+            recalculateAllResults();
+        } catch (e) {
+            console.error("Error loading results:", e);
+            localStorage.removeItem('savedResults');
+            allResults = [];
+        }
+    }
+});
+
+// Funktion zum Laden der Einstellungen aus einer Datei
+async function loadSettingsFromFile(file) {
+    try {
+        const settingsText = await file.text();
+        const settings = JSON.parse(settingsText);
+        
+        // Prüfe ob die Einstellungen ein Objekt sind
+        if (typeof settings !== 'object' || settings === null) {
+            throw new Error("Die Einstellungsdatei enthält kein gültiges JSON-Objekt.");
+        }
+
+        // Liste der erforderlichen Einstellungen
+        const requiredSettings = [
+            'time_price_per_hour',
+            'time_price_per_hour5',
+            'time_price_per_hour10',
+            'material_price_per_kg_PLA',
+            'material_price_per_kg_ABS',
+            'material_price_per_kg_TPU',
+            'material_price_per_kg_PETG',
+            'material_price_per_kg_ASA',
+            'material_price_per_kg_TOUGH_RESIN',
+            'material_price_per_kg_ABS_LIKE_RESIN_V2',
+            'material_price_per_kg_ABS_LIKE_RESIN_PRO',
+            'energy_price_per_kwh',
+            'clean_price_TOUGH_RESIN',
+            'clean_price_ABS_LIKE_RESIN_PRO',
+            'clean_price_ABS_LIKE_RESIN_V2'
+        ];
+
+        // Prüfe jede erforderliche Einstellung
+        const missingSettings = requiredSettings.filter(key => !(key in settings));
+        const invalidSettings = requiredSettings.filter(key => 
+            key in settings && (typeof settings[key] !== 'number' || isNaN(settings[key]))
+        );
+
+        if (missingSettings.length > 0) {
+            throw new Error(`Fehlende Einstellungen: ${missingSettings.join(', ')}`);
+        }
+
+        if (invalidSettings.length > 0) {
+            throw new Error(`Ungültige Werte für: ${invalidSettings.join(', ')}`);
+        }
+
+        // Wenn alle Prüfungen bestanden wurden, Einstellungen übernehmen
+        Object.assign(costConfig, settings);
+        localStorage.setItem('costSettings', JSON.stringify(costConfig));
+        
+        // UI aktualisieren
+        initializeSettingsInputs();
+        
+        // Berechnungen aktualisieren
+        if (allResults.length > 0) {
+            recalculateAllResults();
+        }
+
+        return true;
+    } catch (error) {
+        console.error("Fehler beim Laden der Einstellungen:", error);
+        
+        // Detaillierte Fehlermeldung für den Benutzer
+        let errorMessage = "Fehler beim Laden der Einstellungen:\n";
+        if (error instanceof SyntaxError) {
+            errorMessage += "Die Datei enthält kein gültiges JSON-Format.";
+        } else {
+            errorMessage += error.message;
+        }
+        
+        alert(errorMessage);
+        return false;
+    }
+}
 </script>
 <footer>
 <p style="font-size: 12px; color: #888;">
 © 2025 piodeer. All rights reserved. Created with
-<a href="https://github.com/hoedii/3D-Druck-Kostenrechner" style="color: inherit; text-decoration: none;" target="_blank">Github</a> & ChatGPT.
+<a href="https://github.com/hoedii/3D-Druck-Kostenrechner" style="color: inherit; text-decoration: none;" target="_blank">Github</a>, Cursor & ChatGPT.
 </p>
 </footer>
 </body>
