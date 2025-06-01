@@ -1294,9 +1294,55 @@ resetSettingsBtn.onclick = () => {
 // Verstecke den grauen Export-Button in der UI
 document.getElementById('exportBtn').style.display = 'none';
 
-// Export settings
+// Funktion zum Filtern der verwendeten Einstellungen
+function getFilteredSettings() {
+    const usedSettings = [
+        'time_price_per_hour',
+        'time_price_per_hour5',
+        'time_price_per_hour10',
+        'material_price_per_kg_PLA',
+        'material_price_per_kg_ABS',
+        'material_price_per_kg_TPU',
+        'material_price_per_kg_PETG',
+        'material_price_per_kg_ASA',
+        'material_price_per_kg_TOUGH_RESIN',
+        'material_price_per_kg_ABS_LIKE_RESIN_V2',
+        'material_price_per_kg_ABS_LIKE_RESIN_PRO',
+        'energy_price_per_kwh',
+        'clean_price_TOUGH_RESIN',
+        'clean_price_ABS_LIKE_RESIN_PRO',
+        'clean_price_ABS_LIKE_RESIN_V2',
+        'sender_name',
+        'company_name',
+        'company_street',
+        'company_city',
+        'company_phone',
+        'company_email',
+        'company_bank',
+        'company_iban',
+        'company_twint',
+        'payment_terms',
+        'recipient_name',
+        'recipient_company',
+        'recipient_street',
+        'recipient_city',
+        'recipient_email',
+        'recipient_phone',
+        'recipient_notes'
+    ];
+    
+    const exportSettings = {};
+    usedSettings.forEach(key => {
+        if (costConfig[key] !== undefined) {
+            exportSettings[key] = costConfig[key];
+        }
+    });
+    return exportSettings;
+}
+
+// Export settings Button
 exportSettingsBtn.onclick = () => {
-    const settingsJson = JSON.stringify(costConfig, null, 2);
+    const settingsJson = JSON.stringify(getFilteredSettings(), null, 2);
     const blob = new Blob([settingsJson], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1920,8 +1966,8 @@ document.getElementById('downloadBtn').addEventListener('click', async function(
             }
         }
         
-        // Füge die aktuellen Einstellungen hinzu
-        zip.file('einstellungen.json', JSON.stringify(costConfig, null, 2));
+        // Füge die gefilterten Einstellungen hinzu
+        zip.file('einstellungen.json', JSON.stringify(getFilteredSettings(), null, 2));
         
         const zipContent = await zip.generateAsync({type: 'blob'});
         
