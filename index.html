@@ -3,6 +3,8 @@
 <head>
 <link rel="icon" href="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" type="image/png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>3D Druck Kostenrechner</title>
@@ -173,7 +175,7 @@ padding: 10px 0;
     background: transparent;
     border: 2px solid white;
     color: white;
-    padding: 8px 15px;
+    padding: 0 12px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
@@ -182,34 +184,79 @@ padding: 10px 0;
     right: 20px;
     top: 50%;
     transform: translateY(-50%);
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .download-button {
     background: transparent;
     border: 2px solid white;
     color: white;
-    padding: 6px 12px;
+    padding: 0 12px;
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
     width: auto;
     position: absolute;
-    right: 150px;
+    right: 245px;
     top: 50%;
     transform: translateY(-50%);
-    display: none;
     height: 35px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.pdf-button {
+    background: transparent;
+    border: 2px solid white;
+    color: white;
+    padding: 0 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: auto;
+    position: absolute;
+    right: 160px;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 35px;
+    display: none;  /* Standardmäßig ausgeblendet */
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    white-space: nowrap;
+}
+
+.pdf-button svg, .download-button svg, .settings-button svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 100%;
+}
+
+.button-text {
+    display: inline-block;
     line-height: 1;
 }
 
-.download-button svg {
-    width: 18px;
-    height: 18px;
-    vertical-align: middle;
-    margin-top: -2px;
-}
-
-.download-button:hover, .settings-button:hover {
+.download-button:hover, .pdf-button:hover, .settings-button:hover {
     background: rgba(255, 255, 255, 0.1);
 }
 
@@ -421,18 +468,171 @@ background-color: #555;
     color: #666;
     text-decoration: underline;
 }
+
+@media (max-width: 768px) {
+    .download-button, .pdf-button, .settings-button {
+        position: static;
+        transform: none;
+        margin: 5px;
+        padding: 0 12px;
+    }
+    
+    header {
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 10px;
+    }
+    
+    .button-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+}
+
+/* Additional styles for recipient modal */
+.settings-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.settings-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.modal textarea {
+    font-family: inherit;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    resize: vertical;
+}
+
+.modal input:required {
+    border-left: 3px solid #4CAF50;
+}
+
+.modal-content {
+    padding: 25px;
+}
+
+.settings-grid {
+    margin-top: 20px;
+}
+
+.settings-group {
+    background: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.settings-group h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 5px;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: #333;
+}
+
+.setting-item input,
+.setting-item textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.setting-item input:focus,
+.setting-item textarea:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+}
+
+.modal input:required {
+    border-left: 3px solid #4CAF50;
+}
+
+@media (max-width: 768px) {
+    .settings-grid {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+.settings-group h3 {
+    color: #4CAF50;
+    border-bottom: 2px solid #4CAF50;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+}
+
+.settings-group input[type="text"],
+.settings-group input[type="email"],
+.settings-group input[type="tel"] {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+.settings-group input:focus {
+    border-color: #4CAF50;
+    outline: none;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+}
 </style>
 </head>
 <body>
 <header>
 <img src="https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png" alt="Logo">
 <h1>3D Druck Kostenrechner</h1>
-<button id="downloadBtn" class="download-button" title="Als ZIP herunterladen">
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
-    </svg>
-</button>
-<button id="settingsButton" class="settings-button">Einstellungen</button>
+<div class="button-container">
+    <button id="downloadBtn" class="download-button" title="Als ZIP herunterladen">
+        <div class="button-content">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+            </svg>
+            <span class="button-text">ZIP</span>
+        </div>
+    </button>
+    <button id="pdfExportBtn" class="pdf-button" title="Als PDF exportieren">
+        <div class="button-content">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+            </svg>
+            <span class="button-text">PDF</span>
+        </div>
+    </button>
+    <button id="settingsButton" class="settings-button">
+        <div class="button-content">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            <span class="button-text">Einstellungen</span>
+        </div>
+    </button>
+</div>
 </header>
 <div class="container">
 <h2>Dateien hochladen</h2>
@@ -566,6 +766,46 @@ background-color: #555;
                     <input type="number" step="0.01" id="energy_price_per_kwh">
                 </div>
             </div>
+
+            <div class="settings-group">
+                <h3>PDF Absender-Informationen</h3>
+                <div class="setting-item">
+                    <label>Firmenname</label>
+                    <input type="text" id="company_name">
+                </div>
+                <div class="setting-item">
+                    <label>Straße</label>
+                    <input type="text" id="company_street">
+                </div>
+                <div class="setting-item">
+                    <label>PLZ/Ort</label>
+                    <input type="text" id="company_city">
+                </div>
+                <div class="setting-item">
+                    <label>Telefon</label>
+                    <input type="tel" id="company_phone">
+                </div>
+                <div class="setting-item">
+                    <label>E-Mail</label>
+                    <input type="email" id="company_email">
+                </div>
+                <div class="setting-item">
+                    <label>Bank</label>
+                    <input type="text" id="company_bank">
+                </div>
+                <div class="setting-item">
+                    <label>IBAN</label>
+                    <input type="text" id="company_iban">
+                </div>
+                <div class="setting-item">
+                    <label>TWINT</label>
+                    <input type="text" id="company_twint">
+                </div>
+                <div class="setting-item">
+                    <label>Zahlungsbedingungen</label>
+                    <input type="text" id="payment_terms">
+                </div>
+            </div>
         </div>
 
         <div class="settings-actions">
@@ -574,7 +814,55 @@ background-color: #555;
     </div>
 </div>
 
+<!-- Recipient Modal -->
+<div id="recipientModal" class="modal">
+    <div class="modal-content" style="max-width: 900px;">
+        <span class="close">&times;</span>
+        <h2>Empfänger-Informationen</h2>
+        
+        <div class="settings-grid" style="grid-template-columns: 1fr;">
+            <div class="settings-group">
+                <div class="setting-item">
+                    <label>Name/Ansprechpartner*</label>
+                    <input type="text" id="recipient_name" required>
+                </div>
+                <div class="setting-item">
+                    <label>Straße*</label>
+                    <input type="text" id="recipient_street" required>
+                </div>
+                <div class="setting-item">
+                    <label>PLZ/Ort*</label>
+                    <input type="text" id="recipient_city" required>
+                </div>
+                <div class="setting-item">
+                    <label>E-Mail</label>
+                    <input type="email" id="recipient_email">
+                </div>
+                <div class="setting-item">
+                    <label>Telefon</label>
+                    <input type="tel" id="recipient_phone">
+                </div>
+                <div class="setting-item">
+                    <label>Bemerkungen</label>
+                    <textarea id="recipient_notes" rows="3" style="width: 100%; padding: 8px;"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <p style="color: #666; font-size: 12px; margin-top: 10px;">* Pflichtfelder</p>
+
+        <div class="settings-actions">
+            <button id="cancelPdfBtn" style="background-color: #999;">Abbrechen</button>
+            <button id="confirmPdfBtn" style="background-color: #4CAF50;">PDF erstellen</button>
+        </div>
+    </div>
+</div>
+
 <script>
+// Globale Variablen
+let selectedFiles = [];
+let originalFiles = [];  // Array für die Original-Dateien
+
 const costConfig = {
     time_price_per_hour: 2.75,
     time_price_per_hour5: 1.75,
@@ -590,8 +878,57 @@ const costConfig = {
     energy_price_per_kwh: 0.40,
     clean_price_TOUGH_RESIN: 5.0,
     clean_price_ABS_LIKE_RESIN_PRO: 5.0,
-    clean_price_ABS_LIKE_RESIN_V2: 3.0
+    clean_price_ABS_LIKE_RESIN_V2: 3.0,
+    // Absender-Informationen
+    company_name: "",
+    company_street: "",
+    company_city: "",
+    company_phone: "",
+    company_email: "",
+    company_iban: "",
+    company_bank: "",
+    company_twint: "",
+    payment_terms: "Zahlbar innerhalb von 30 Tagen",
+    // Empfänger-Informationen
+    recipient_name: "",
+    recipient_street: "",
+    recipient_city: "",
+    recipient_email: "",
+    recipient_phone: "",
+    recipient_notes: ""
 };
+
+// Füge die Empfängerfelder zu den Einstellungen hinzu
+document.querySelector('.settings-grid').insertAdjacentHTML('beforeend', `
+    <div class="settings-group">
+        <h3>Standard-Empfänger</h3>
+        <p style="color: #666; font-size: 12px; margin-bottom: 15px;">Diese Informationen werden als Vorschlag im PDF-Dialog angezeigt.</p>
+        <div class="setting-item">
+            <label>Name/Ansprechpartner</label>
+            <input type="text" id="recipient_name">
+        </div>
+        <div class="setting-item">
+            <label>Straße</label>
+            <input type="text" id="recipient_street">
+        </div>
+        <div class="setting-item">
+            <label>PLZ/Ort</label>
+            <input type="text" id="recipient_city">
+        </div>
+        <div class="setting-item">
+            <label>E-Mail</label>
+            <input type="email" id="recipient_email">
+        </div>
+        <div class="setting-item">
+            <label>Telefon</label>
+            <input type="tel" id="recipient_phone">
+        </div>
+        <div class="setting-item">
+            <label>Standard-Bemerkungen</label>
+            <textarea id="recipient_notes" rows="3" style="width: 100%; padding: 8px;"></textarea>
+        </div>
+    </div>
+`);
 
 // Standardeinstellungen als Referenz
 const defaultSettings = { ...costConfig };
@@ -731,29 +1068,37 @@ function initializeSettingsInputs() {
         const input = document.getElementById(key);
         if (input) {
             input.value = value;
-            // Prüfe ob der Wert vom Standard abweicht
-            if (Math.abs(value - defaultSettings[key]) > 0.001) {
-                input.style.color = '#ff0000';
-            } else {
-                input.style.color = '#000000';
+            
+            // Nur für numerische Werte die Farbänderung anwenden
+            if (typeof value === 'number') {
+                if (Math.abs(value - defaultSettings[key]) > 0.001) {
+                    input.style.color = '#ff0000';
+                } else {
+                    input.style.color = '#000000';
+                }
             }
             
-            // Füge Event Listener für Änderungen hinzu
+            // Event Listener für Änderungen
             input.addEventListener('input', function() {
-                const newValue = parseFloat(this.value);
-                if (!isNaN(newValue)) {
-                    // Aktualisiere die Textfarbe
-                    if (Math.abs(newValue - defaultSettings[key]) > 0.001) {
-                        this.style.color = '#ff0000';
-                    } else {
-                        this.style.color = '#000000';
+                if (typeof value === 'number') {
+                    // Für numerische Werte
+                    const newValue = parseFloat(this.value);
+                    if (!isNaN(newValue)) {
+                        if (Math.abs(newValue - defaultSettings[key]) > 0.001) {
+                            this.style.color = '#ff0000';
+                        } else {
+                            this.style.color = '#000000';
+                        }
+                        costConfig[key] = newValue;
                     }
-                    
-                    // Speichere den neuen Wert
-                    costConfig[key] = newValue;
-                    localStorage.setItem('costSettings', JSON.stringify(costConfig));
-                    
-                    // Aktualisiere die Berechnungen
+                } else {
+                    // Für Text-Werte
+                    costConfig[key] = this.value;
+                }
+                localStorage.setItem('costSettings', JSON.stringify(costConfig));
+                
+                // Wenn es sich um einen numerischen Wert handelt, Berechnungen aktualisieren
+                if (typeof value === 'number') {
                     recalculateAllResults();
                 }
             });
@@ -846,7 +1191,12 @@ function renderResults() {
 
     // Zeige oder verstecke Buttons basierend auf vorhandenen Ergebnissen
     const hasResults = allResults.length > 0;
-    document.getElementById('downloadBtn').style.display = hasResults ? 'block' : 'none';
+    
+    // PDF und Download Buttons
+    document.getElementById('downloadBtn').style.display = hasResults ? 'flex' : 'none';
+    document.getElementById('pdfExportBtn').style.display = hasResults ? 'flex' : 'none';
+    
+    // Andere UI-Elemente
     document.getElementById('clearAllButton').style.display = hasResults ? 'block' : 'none';
     document.getElementById('totalCostContainer').style.display = hasResults ? 'block' : 'none';
 }
@@ -1176,7 +1526,7 @@ function processPM4UFile(file) {
 }
 
 // Speichere die originalen Dateien
-let originalFiles = [];
+// let originalFiles = [];  // Diese Deklaration entfernen, da sie bereits oben existiert
 
 // Funktion zum Verarbeiten der ausgewählten Dateien
 function processSelectedFiles(files) {
@@ -1369,9 +1719,9 @@ document.getElementById('folderInput').addEventListener('change', async function
 document.getElementById('downloadBtn').addEventListener('click', async function() {
     try {
         const now = new Date();
-        const dateStr = now.toLocaleDateString('de-CH').replace(/\./g, '-');
-        const timeStr = now.toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' }).replace(':', '-');
-        const defaultName = `3D-Druck-Kostenrechnung_${dateStr}_${timeStr}`;
+        const dateStr = formatDate(now);
+        const timeStr = formatTime(now);
+        const defaultName = `3D-Druck-Kostenrechnung_${dateStr.replace(/\./g, '-')}_${timeStr.replace(':', '-')}`;
         
         const fileName = prompt('Bitte geben Sie einen Namen für die ZIP-Datei ein:', defaultName);
         if (!fileName) return;
@@ -1382,38 +1732,31 @@ document.getElementById('downloadBtn').addEventListener('click', async function(
         const fileNameCount = {};
         
         // Füge alle originalen Dateien hinzu
-        for (const file of originalFiles) {
-            const fileData = await file.arrayBuffer();
+        for (const result of allResults) {
+            // Finde die entsprechende Original-Datei
+            const originalFile = originalFiles.find(f => f.name === result.fileName);
+            if (!originalFile) {
+                console.warn(`Original file not found for ${result.fileName}`);
+                continue;
+            }
+
+            let targetFileName = result.fileName;
             
-            // Finde den entsprechenden Ergebniseintrag für diese Datei
-            const resultEntry = allResults.find(r => 
-                r.fileName === file.name && 
-                r.id && 
-                !fileNameCount[r.id]  // Nur wenn diese ID noch nicht verarbeitet wurde
-            );
-            
-            let targetFileName = file.name;
-            
-            // Wenn es ein Ergebniseintrag ist und die Datei mehrfach vorkommt
-            if (resultEntry) {
-                // Extrahiere Basis-Dateinamen und Erweiterung
-                const lastDotIndex = file.name.lastIndexOf('.');
-                const baseName = lastDotIndex > -1 ? file.name.substring(0, lastDotIndex) : file.name;
-                const extension = lastDotIndex > -1 ? file.name.substring(lastDotIndex) : '';
-                
-                // Zähle wie oft dieser Dateiname vorkommt
-                fileNameCount[file.name] = (fileNameCount[file.name] || 0) + 1;
-                
-                // Wenn es mehr als eine Datei mit diesem Namen gibt, füge eine Nummer hinzu
-                if (fileNameCount[file.name] > 1) {
-                    targetFileName = `${baseName}_${fileNameCount[file.name]}${extension}`;
-                }
-                
-                // Markiere diese ID als verarbeitet
-                fileNameCount[resultEntry.id] = true;
+            // Wenn die Datei mehrfach vorkommt
+            fileNameCount[result.fileName] = (fileNameCount[result.fileName] || 0) + 1;
+            if (fileNameCount[result.fileName] > 1) {
+                const lastDotIndex = result.fileName.lastIndexOf('.');
+                const baseName = lastDotIndex > -1 ? result.fileName.substring(0, lastDotIndex) : result.fileName;
+                const extension = lastDotIndex > -1 ? result.fileName.substring(lastDotIndex) : '';
+                targetFileName = `${baseName}_${fileNameCount[result.fileName]}${extension}`;
             }
             
-            zip.file(targetFileName, fileData);
+            try {
+                const fileData = await originalFile.arrayBuffer();
+                zip.file(targetFileName, fileData);
+            } catch (error) {
+                console.error(`Error adding file ${targetFileName} to zip:`, error);
+            }
         }
         
         // Füge die aktuellen Einstellungen hinzu
@@ -1464,6 +1807,8 @@ renderResults = function() {
     document.getElementById('exportBtn').style.display = hasResults ? 'block' : 'none';
     document.getElementById('clearAllButton').style.display = hasResults ? 'block' : 'none';
     document.getElementById('totalCostContainer').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('pdfExportBtn').style.display = hasResults ? 'block' : 'none';
+    document.getElementById('downloadBtn').style.display = hasResults ? 'block' : 'none';
 };
 
 // Event Handler für Einstellungs-Inputs
@@ -1492,6 +1837,9 @@ function addSettingInputListeners() {
 
 // Füge einen Event Listener für das Laden der Seite hinzu
 document.addEventListener('DOMContentLoaded', function() {
+    // Stelle sicher, dass der PDF-Button initial ausgeblendet ist
+    document.getElementById('pdfExportBtn').style.display = 'none';
+    
     // Lade gespeicherte Einstellungen
     const savedSettings = localStorage.getItem('costSettings');
     if (savedSettings) {
@@ -1519,6 +1867,13 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // Berechne alle Ergebnisse mit den aktuellen Einstellungen neu
             recalculateAllResults();
+            
+            // Aktualisiere die Sichtbarkeit der Buttons basierend auf den Ergebnissen
+            const hasResults = allResults.length > 0;
+            document.getElementById('pdfExportBtn').style.display = hasResults ? 'flex' : 'none';
+            document.getElementById('downloadBtn').style.display = hasResults ? 'flex' : 'none';
+            document.getElementById('clearAllButton').style.display = hasResults ? 'block' : 'none';
+            document.getElementById('totalCostContainer').style.display = hasResults ? 'block' : 'none';
         } catch (e) {
             console.error("Error loading results:", e);
             localStorage.removeItem('savedResults');
@@ -1598,6 +1953,381 @@ async function loadSettingsFromFile(file) {
         alert(errorMessage);
         return false;
     }
+}
+
+// Modifiziere die PDF Export Funktion
+function exportToPDF(formData = {}) {
+    if (allResults.length === 0) {
+        alert("Keine Positionen zum Exportieren vorhanden.");
+        return;
+    }
+
+    // Initialisiere jsPDF
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Lade und füge das Logo hinzu
+    const img = new Image();
+    img.src = "https://raw.githubusercontent.com/hoedii/3D-Druck-Kostenrechner/main/Logo.png";
+    
+    img.onload = function() {
+        // Definiere Farben
+        const primaryColor = [76, 175, 80];  // RGB für #4CAF50
+        const textColor = [60, 60, 60];      // Dunkelgrau
+        const subtleColor = [120, 120, 120]; // Mittelgrau
+
+        // Füge den grünen Header-Balken hinzu (Höhe von 40 auf 30 reduziert)
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 0, doc.internal.pageSize.width, 30, 'F');
+
+        // Berechne die Positionen für zentriertes Layout
+        const pageWidth = doc.internal.pageSize.width;
+        const imgWidth = 20;
+        const imgHeight = (img.height * imgWidth) / img.width;
+        
+        // Setze temporär die Schriftart für die Titelbreiten-Berechnung
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont("helvetica", "bold");
+        const titleWidth = doc.getTextWidth("3D Druck Kostenrechnung");
+        
+        // Berechne die Gesamtbreite des Layouts (Logo + Abstand + Text)
+        const totalWidth = imgWidth + 10 + titleWidth; // 10 ist der Abstand zwischen Logo und Text
+        const startX = (pageWidth - totalWidth) / 2;
+        
+        // Füge das Logo im Header hinzu (zentriert)
+        doc.addImage(img, 'PNG', startX, 5, imgWidth, imgHeight);
+
+        // Füge den Titel hinzu (zentriert, neben dem Logo)
+        doc.text("3D Druck Kostenrechnung", startX + imgWidth + 10, 19);
+
+        // Rest des PDFs entsprechend nach oben verschieben
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        
+        // Linke Spalte - Absender (Y-Position angepasst)
+        doc.text("Absender:", 15, 45);
+        doc.setFont("helvetica", "bold");
+        doc.text(formData.company_name || costConfig.company_name, 15, 52);
+        doc.setFont("helvetica", "normal");
+        doc.text([
+            formData.company_street || costConfig.company_street,
+            formData.company_city || costConfig.company_city,
+            `Tel: ${formData.company_phone || costConfig.company_phone}`,
+            `E-Mail: ${formData.company_email || costConfig.company_email}`
+        ], 15, 57);
+
+        // Rechte Spalte - Dokumentendetails (Y-Position angepasst)
+        const now = new Date();
+        const dateStr = formatDate(now);
+        const timeStr = formatTime(now);
+        doc.text([
+            "Dokumenten-Nr.:",
+            "Datum:",
+            "Seite:"
+        ], doc.internal.pageSize.width - 85, 45);
+        
+        doc.text([
+            generateDocumentNumber(),
+            `${dateStr} ${timeStr}`,
+            "1/1"
+        ], doc.internal.pageSize.width - 30, 45, { align: 'right' });
+
+        // Empfänger-Details (Y-Position angepasst)
+        doc.text("Empfänger:", 15, 80);
+        doc.setFont("helvetica", "bold");
+        doc.text(formData.recipient_name || "Bitte Empfänger angeben", 15, 87);
+        doc.setFont("helvetica", "normal");
+        doc.text([
+            formData.recipient_street || "Straße",
+            formData.recipient_city || "PLZ/Ort",
+            formData.recipient_phone ? `Tel: ${formData.recipient_phone}` : null,
+            formData.recipient_email ? `E-Mail: ${formData.recipient_email}` : null
+        ].filter(Boolean), 15, 92);
+
+        // Betreff (Y-Position angepasst)
+        doc.setFont("helvetica", "bold");
+        doc.text("Kostenaufstellung 3D-Druck", 15, 125);
+        doc.setFont("helvetica", "normal");
+
+        // Erstelle die Tabellendaten
+        const tableData = allResults.map(result => [
+            result.fileName,
+            result.materialType || 'Unbekannt',
+            result.type === 'gcode' ? 
+                (result.usedFilament ? result.usedFilament.toFixed(2) + ' g' : 'N/A') :
+                (result.volume ? (result.volume * 1.15).toFixed(2) + ' g' : 'N/A'),
+            result.totalFileCost ? result.totalFileCost.toFixed(2) + ' CHF' : 'N/A'
+        ]);
+
+        // Berechne Gesamtsummen
+        const totalCost = allResults.reduce((sum, result) => sum + (result.totalFileCost || 0), 0);
+        
+        // Füge die Tabelle hinzu
+        doc.autoTable({
+            head: [['Dateiname', 'Material', 'Gewicht', 'Gesamtkosten']],
+            body: tableData,
+            startY: 130,
+            styles: {
+                fontSize: 9,
+                cellPadding: 3,
+                lineColor: [200, 200, 200],
+                lineWidth: 0.1,
+                font: "helvetica"
+            },
+            headStyles: {
+                fillColor: primaryColor,
+                textColor: [255, 255, 255],
+                fontSize: 10,
+                fontStyle: 'bold',
+                halign: 'left'
+            },
+            columnStyles: {
+                0: { cellWidth: 80 },
+                1: { cellWidth: 40 },
+                2: { cellWidth: 30, halign: 'right' },
+                3: { cellWidth: 35, halign: 'right' }
+            },
+            alternateRowStyles: {
+                fillColor: [250, 250, 250]
+            }
+        });
+
+        const tableEndY = doc.lastAutoTable.finalY || 130;
+        
+        // Füge eine Linie vor der Gesamtsumme hinzu
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.3);
+        doc.line(doc.internal.pageSize.width - 65, tableEndY + 5, doc.internal.pageSize.width - 15, tableEndY + 5);
+
+        // Füge Gesamtsumme hinzu
+        doc.setFontSize(10);
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        
+        // Rechts ausgerichtete Spalten für bessere Lesbarkeit
+        const rightColumnX = doc.internal.pageSize.width - 15;
+        const leftColumnX = doc.internal.pageSize.width - 65;  // Von -115 auf -65 geändert
+        
+        doc.text("Gesamtkosten:", leftColumnX, tableEndY + 12);
+        doc.text(`${totalCost.toFixed(2)} CHF`, rightColumnX, tableEndY + 12, { align: 'right' });
+
+        // Optional: Füge Bemerkungen hinzu wenn vorhanden
+        if (formData.recipient_notes) {
+            doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+            doc.setFont("helvetica", "bold");
+            doc.text("Bemerkungen:", 15, tableEndY + 35);
+            doc.setFont("helvetica", "normal");
+            const splitNotes = doc.splitTextToSize(formData.recipient_notes, 180);
+            doc.text(splitNotes, 15, tableEndY + 42);
+            notesOffset = splitNotes.length * 7 + 20;
+        }
+
+        // Füge Zahlungsinformationen am unteren Seitenrand hinzu
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+
+        // Berechne Position für Zahlungsinformationen (30 Einheiten vom unteren Rand)
+        const paymentY = pageHeight - 45;
+
+        doc.text([
+            "Zahlungsbedingungen:",
+            formData.payment_terms || costConfig.payment_terms,
+        ], 15, paymentY);
+
+        // "Bankverbindung:" in Fett
+        doc.setFont("helvetica", "bold");
+        doc.text("Bankverbindung:", 15, paymentY + 10);
+        
+        // Zurück zu normaler Schrift für die restlichen Details
+        doc.setFont("helvetica", "normal");
+        doc.text([
+            formData.company_bank || costConfig.company_bank,
+            `IBAN: ${formData.company_iban || costConfig.company_iban}`,
+            formData.company_twint ? `oder TWINT an: ${formData.company_twint}` : ""
+        ].filter(line => line !== ""), 15, paymentY + 15);
+
+        // Füge Fußzeile hinzu
+        doc.setFillColor(245, 245, 245);
+        doc.rect(0, doc.internal.pageSize.height - 15, doc.internal.pageSize.width, 15, 'F');
+        doc.setFontSize(8);
+        doc.setTextColor(subtleColor[0], subtleColor[1], subtleColor[2]);
+        doc.text("Erstellt mit 3D Druck Kostenrechner", 15, doc.internal.pageSize.height - 5);
+        doc.text("© 2025 piodeer. All rights reserved.", doc.internal.pageSize.width - 15, doc.internal.pageSize.height - 5, { align: 'right' });
+
+        // Speichere das PDF
+        const pdfName = `3D-Druck-Kostenrechnung_${dateStr.replace(/\./g, '-')}_${timeStr.replace(':', '-')}.pdf`;
+        doc.save(pdfName);
+    };
+}
+
+// Modifiziere den Event Handler für den PDF Export Button
+document.getElementById('pdfExportBtn').addEventListener('click', function() {
+    const modal = document.getElementById('recipientModal');
+    
+    // Hole die aktuellen Werte aus den Einstellungs-Inputs
+    const recipientFields = ['recipient_name', 'recipient_company', 'recipient_street', 
+                           'recipient_city', 'recipient_email', 'recipient_phone', 'recipient_notes'];
+    
+    recipientFields.forEach(fieldId => {
+        // Aktualisiere costConfig mit den aktuellen Werten aus den Einstellungen
+        const settingsInput = document.querySelector(`.settings-group #${fieldId}`);
+        if (settingsInput) {
+            costConfig[fieldId] = settingsInput.value;
+        }
+        
+        // Übertrage die Werte in das Modal
+        const modalInput = document.querySelector(`#recipientModal #${fieldId}`);
+        if (modalInput) {
+            modalInput.value = costConfig[fieldId] || '';
+        }
+    });
+    
+    modal.style.display = "block";
+});
+
+// Modifiziere den Event Handler für den Bestätigen Button
+document.getElementById('confirmPdfBtn').addEventListener('click', function() {
+    const requiredFields = ['recipient_name', 'recipient_street', 'recipient_city'];
+    const missingFields = requiredFields.filter(field => !document.getElementById(field).value.trim());
+    
+    if (missingFields.length > 0) {
+        alert("Bitte füllen Sie alle Pflichtfelder aus.");
+        return;
+    }
+    
+    // Sammle alle Formularwerte
+    const formData = { ...costConfig }; // Kopiere alle Einstellungen
+    const inputs = document.querySelectorAll('#recipientModal input, #recipientModal textarea');
+    inputs.forEach(input => {
+        if (input.id && input.value.trim()) {
+            formData[input.id] = input.value.trim();
+        }
+    });
+    
+    // Speichere die aktuellen Empfänger-Daten für die nächste Verwendung
+    const recipientData = {};
+    Object.keys(formData).forEach(key => {
+        if (key.startsWith('recipient_')) {
+            recipientData[key] = formData[key];
+        }
+    });
+    localStorage.setItem('lastRecipientData', JSON.stringify(recipientData));
+    
+    // Schließe das Modal
+    document.getElementById('recipientModal').style.display = "none";
+    
+    // Generiere das PDF mit allen Daten
+    exportToPDF(formData);
+});
+
+// Event Handler für Abbrechen Button
+document.getElementById('cancelPdfBtn').addEventListener('click', function() {
+    document.getElementById('recipientModal').style.display = "none";
+});
+
+// Schließen des Modals
+document.querySelector('#recipientModal .close').addEventListener('click', function() {
+    document.getElementById('recipientModal').style.display = "none";
+});
+
+// Füge zusätzliche CSS-Styles hinzu
+const style = document.createElement('style');
+style.textContent = `
+    .modal-content {
+        padding: 25px;
+    }
+    
+    .settings-grid {
+        margin-top: 20px;
+    }
+    
+    .settings-group {
+        background: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+    }
+    
+    .settings-group h3 {
+        margin-top: 0;
+        margin-bottom: 15px;
+        color: #4CAF50;
+        border-bottom: 2px solid #4CAF50;
+        padding-bottom: 5px;
+    }
+    
+    .setting-item {
+        margin-bottom: 15px;
+    }
+    
+    .setting-item label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .setting-item input,
+    .setting-item textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .setting-item input:focus,
+    .setting-item textarea:focus {
+        border-color: #4CAF50;
+        outline: none;
+        box-shadow: 0 0 5px rgba(76, 175, 80, 0.2);
+    }
+    
+    .modal input:required {
+        border-left: 3px solid #4CAF50;
+    }
+    
+    @media (max-width: 768px) {
+        .settings-grid {
+            grid-template-columns: 1fr !important;
+        }
+    }
+`;
+document.head.appendChild(style);
+
+// Funktion zum Formatieren des Datums
+function formatDate(date) {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}.${month}.${year}`;
+}
+
+// Funktion zum Formatieren der Zeit
+function formatTime(date) {
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
+// Funktion zur Generierung der Dokumentennummer
+function generateDocumentNumber() {
+    // Hole die letzte Nummer aus dem localStorage oder starte bei 0
+    let lastNumber = parseInt(localStorage.getItem('lastDocumentNumber') || '0');
+    
+    // Erhöhe die Nummer um 1
+    lastNumber++;
+    
+    // Speichere die neue Nummer
+    localStorage.setItem('lastDocumentNumber', lastNumber.toString());
+    
+    // Formatiere die Nummer mit führenden Nullen auf 8 Stellen
+    const formattedNumber = lastNumber.toString().padStart(8, '0');
+    
+    return `KR-${formattedNumber}`;
 }
 </script>
 <footer>
