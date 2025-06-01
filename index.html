@@ -825,7 +825,7 @@ function renderResults() {
             : `<p><strong>Verwendetes Resin:</strong> ${result.volume !== null ? (result.volume * 1.15).toFixed(2) + ' g' : 'N/A'}</p>`;
         const timeCostLabel = result.type === 'pm4u' ? 'Zeitkosten (inkl. Reinigung)' : 'Zeitkosten';
         outputHtml = `
-        <div class="gcode-result" id="${idPrefix}${cleanFileName}">
+        <div class="gcode-result" id="${idPrefix}${cleanFileName}_${result.id}">
         <div class="accordion"><span>${result.fileName}</span></div>
         <div class="panel">
         <p><strong>Materialtyp:</strong> ${result.materialType || 'Unbekannt'}</p>
@@ -835,7 +835,7 @@ function renderResults() {
         <p title="${result.timeTooltip || ''}"><strong>${timeCostLabel}:</strong> ${result.timeCost !== undefined ? result.timeCost.toFixed(2) + ' CHF' : 'N/A'}</p>
         <p title="${result.energyTooltip || ''}"><strong>Stromkosten:</strong> ${result.energyCost !== undefined ? result.energyCost.toFixed(2) + ' CHF' : 'N/A'}</p>
         <p><strong>Gesamtkosten:</strong> ${result.totalFileCost !== undefined ? result.totalFileCost.toFixed(2) + ' CHF' : 'N/A'}</p>
-        <button class="delete-button" onclick="deleteResult(this, '${result.fileName.replace(/'/g, "\\'").replace(/"/g, '\\"')}')">Löschen</button>
+        <button class="delete-button" onclick="deleteResult(this, '${result.fileName.replace(/'/g, "\\'").replace(/"/g, '\\"')}', '${result.id}')">Löschen</button>
         </div>
         </div>
         `;
@@ -893,10 +893,10 @@ function updateTotalCosts() {
     document.getElementById('clearAllButton').style.display = totalCost > 0 ? 'block' : 'none';
 }
 
-function deleteResult(button, fileName) {
+function deleteResult(button, fileName, resultId) {
     const resultDiv = button.closest('.gcode-result');
     if (resultDiv) resultDiv.remove();
-    allResults = allResults.filter(r => r.fileName !== fileName);
+    allResults = allResults.filter(r => r.id !== resultId);
     updateTotalCosts();
     localStorage.setItem('savedResults', JSON.stringify(allResults));
 }
@@ -917,6 +917,9 @@ function toggleAccordion() {
 
 function processGCodeFile(file) {
     return new Promise((resolve) => {
+        // Generiere eine eindeutige ID für diese Datei
+        const uniqueId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
         // Füge die Datei zu originalFiles hinzu
         if (!originalFiles.includes(file)) {
             originalFiles.push(file);
@@ -985,6 +988,7 @@ function processGCodeFile(file) {
             const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
             const totalFileCost = materialCost + timeCost + energyCost;
             allResults.push({
+                id: uniqueId,
                 fileName: file.name,
                 type: 'gcode',
                 materialType,
@@ -1025,6 +1029,9 @@ function processGCodeFile(file) {
 
 function processPM4UFile(file) {
     return new Promise((resolve) => {
+        // Generiere eine eindeutige ID für diese Datei
+        const uniqueId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
         // Füge die Datei zu originalFiles hinzu
         if (!originalFiles.includes(file)) {
             originalFiles.push(file);
@@ -1087,6 +1094,7 @@ function processPM4UFile(file) {
                         const timeTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) + Reinigung (${cleanPrice.toFixed(2)} CHF) = ${timeCost.toFixed(2)} CHF`;
                         const energyTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
                         allResults.push({
+                            id: uniqueId,
                             fileName: file.name,
                             type: 'pm4u',
                             materialType: materialTypeName,
@@ -1370,10 +1378,42 @@ document.getElementById('downloadBtn').addEventListener('click', async function(
         
         const zip = new JSZip();
         
+        // Erstelle ein Objekt zur Verfolgung der Dateinamen und ihrer Häufigkeit
+        const fileNameCount = {};
+        
         // Füge alle originalen Dateien hinzu
         for (const file of originalFiles) {
             const fileData = await file.arrayBuffer();
-            zip.file(file.name, fileData);
+            
+            // Finde den entsprechenden Ergebniseintrag für diese Datei
+            const resultEntry = allResults.find(r => 
+                r.fileName === file.name && 
+                r.id && 
+                !fileNameCount[r.id]  // Nur wenn diese ID noch nicht verarbeitet wurde
+            );
+            
+            let targetFileName = file.name;
+            
+            // Wenn es ein Ergebniseintrag ist und die Datei mehrfach vorkommt
+            if (resultEntry) {
+                // Extrahiere Basis-Dateinamen und Erweiterung
+                const lastDotIndex = file.name.lastIndexOf('.');
+                const baseName = lastDotIndex > -1 ? file.name.substring(0, lastDotIndex) : file.name;
+                const extension = lastDotIndex > -1 ? file.name.substring(lastDotIndex) : '';
+                
+                // Zähle wie oft dieser Dateiname vorkommt
+                fileNameCount[file.name] = (fileNameCount[file.name] || 0) + 1;
+                
+                // Wenn es mehr als eine Datei mit diesem Namen gibt, füge eine Nummer hinzu
+                if (fileNameCount[file.name] > 1) {
+                    targetFileName = `${baseName}_${fileNameCount[file.name]}${extension}`;
+                }
+                
+                // Markiere diese ID als verarbeitet
+                fileNameCount[resultEntry.id] = true;
+            }
+            
+            zip.file(targetFileName, fileData);
         }
         
         // Füge die aktuellen Einstellungen hinzu
