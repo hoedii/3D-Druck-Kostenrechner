@@ -5,6 +5,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>3D Druck Kostenrechner</title>
@@ -2162,7 +2163,68 @@ async function loadSettingsFromFile(file) {
     }
 }
 
-// Modifiziere die PDF Export Funktion
+// Funktion zum Generieren des QR-Code Strings
+function generateQRString(formData, totalAmount, documentNumber) {
+    // Remove spaces from IBAN
+    const iban = (formData.company_iban || costConfig.company_iban || '').replace(/\s+/g, '');
+    
+    // Function to split street and house number
+    function splitStreetAndNumber(address) {
+        if (!address) return { street: '', number: '' };
+        const match = address.match(/(.*?)\s*(\d+\s*[a-zA-Z]?)\s*$/);
+        if (match) {
+            return {
+                street: match[1].trim(),
+                number: match[2].trim()
+            };
+        }
+        return { street: address.trim(), number: '' };
+    }
+
+    // Split creditor address
+    const creditorAddress = splitStreetAndNumber(formData.company_street || costConfig.company_street);
+    
+    // Split debtor address
+    const debtorAddress = splitStreetAndNumber(formData.recipient_street);
+    
+    const qrData = [
+        'SPC',                                          // 01: Header
+        '0200',                                         // 02: Version
+        '1',                                            // 03: Coding Type
+        iban,                                           // 04: IBAN (without spaces)
+        'S',                                           // 05: Creditor Address Type
+        formData.sender_name || costConfig.sender_name, // 06: Creditor Name
+        creditorAddress.street,                         // 07: Creditor Street
+        creditorAddress.number,                         // 08: Creditor House Number
+        formData.company_city.split(' ')[0] || '',     // 09: Creditor Postal Code
+        formData.company_city.split(' ').slice(1).join(' ') || '', // 10: Creditor Town
+        'CH',                                          // 11: Creditor Country
+        '',                                            // 12: UCR
+        '',                                            // 13: Reserved
+        '',                                            // 14: Reserved
+        '',                                            // 15: Reserved
+        '',                                            // 16: Reserved
+        '',                                            // 17: Reserved
+        '',                                            // 18: Reserved
+        totalAmount.toFixed(2),                        // 19: Amount
+        'CHF',                                         // 20: Currency
+        'S',                                           // 21: Debtor Address Type
+        formData.recipient_name,                       // 22: Debtor Name
+        debtorAddress.street,                          // 23: Debtor Street
+        debtorAddress.number,                          // 24: Debtor House Number
+        formData.recipient_city.split(' ')[0] || '',   // 25: Debtor Postal Code
+        formData.recipient_city.split(' ').slice(1).join(' ') || '', // 26: Debtor Town
+        'CH',                                          // 27: Debtor Country
+        'NON',                                         // 28: Reference Type
+        '',                                            // 29: Reference (empty)
+        '3D Druck Kostenrechnung',                     // 30: Unstructured Message
+        'EPD'                                          // 31: EPD
+    ].join('\n');
+
+    return qrData;
+}
+
+// Modifiziere die exportToPDF Funktion
 function exportToPDF(formData = {}) {
     if (allResults.length === 0) {
         alert("Keine Positionen zum Exportieren vorhanden.");
@@ -2186,20 +2248,23 @@ function exportToPDF(formData = {}) {
             stripe: [52, 152, 219]        // Helleres Blau für den Streifen (#3498db)
         };
 
+        // Global layout variables
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+        const margin = 20;
+        const imgWidth = 18;
+        const imgHeight = (img.height * imgWidth) / img.width;
+        const startX = 13; // Logo etwas weiter nach rechts, damit es auf dem Streifen sitzt
+
         // Füge einen subtilen grauen Hintergrund für den Header hinzu
         doc.setFillColor(colors.accent[0], colors.accent[1], colors.accent[2]);
-        doc.rect(0, 0, doc.internal.pageSize.width, 35, 'F');
+        doc.rect(0, 0, pageWidth, 35, 'F');
 
         // Füge den farbigen Akzentstreifen hinzu
         doc.setFillColor(colors.stripe[0], colors.stripe[1], colors.stripe[2]);
         doc.rect(0, 0, 45, 35, 'F');
 
         // Berechne die Positionen für ein ausgewogenes Layout
-        const pageWidth = doc.internal.pageSize.width;
-        const imgWidth = 18; // Etwas kleiner für einen eleganteren Look
-        const imgHeight = (img.height * imgWidth) / img.width;
-        const margin = 20;
-        const startX = 13; // Logo etwas weiter nach rechts, damit es auf dem Streifen sitzt
         const titleX = startX + imgWidth + 25; // Mehr Abstand zwischen Logo und Text
         
         // Setze die Schriftart für den Titel
@@ -2353,31 +2418,181 @@ function exportToPDF(formData = {}) {
             notesOffset = splitNotes.length * 7 + 20;
         }
 
-        // Füge Zahlungsinformationen am unteren Seitenrand hinzu
-        const pageHeight = doc.internal.pageSize.height;
-        doc.setTextColor(colors.secondary[0], colors.secondary[1], colors.secondary[2]);
-        doc.setFont("helvetica", "normal");
-        doc.setFontSize(10);
+        // Berechne die benötigte Höhe für den Zahlungsbereich
+        const paymentSectionHeight = 120; // Ungefähre Höhe des Zahlungsbereichs
 
-        const paymentY = pageHeight - 45;
-        doc.text([
-            "Zahlungsbedingungen:",
-            formData.payment_terms || costConfig.payment_terms,
-        ], margin, paymentY);
+        // Prüfe, ob genug Platz auf der aktuellen Seite ist
+        const remainingSpace = pageHeight - (tableEndY + 42 + notesOffset);
+        let currentPageY = tableEndY;
 
+        if (remainingSpace < paymentSectionHeight) {
+            // Wenn nicht genug Platz ist, füge eine neue Seite hinzu
+            doc.addPage();
+            // Setze currentPageY auf den Anfang der neuen Seite
+            currentPageY = margin;
+        }
+
+        // Payment section layout - jetzt mit dynamischer Y-Position
+        const paymentY = currentPageY + 42 + notesOffset + (remainingSpace < paymentSectionHeight ? 0 : 20);
+        const qrX = pageWidth - margin - 52;
+        const qrY = paymentY;
+        const qrWidth = 46;
+        const qrHeight = 46;
+
+        // Generate QR Code
+        const qrString = generateQRString(formData, totalCost, generateDocumentNumber());
+        const qr = qrcode(0, 'M');
+        qr.addData(qrString);
+        qr.make();
+        
+        // Convert QR code to data URL with higher resolution
+        const scale = 4; // Increase scale factor for better resolution
+        const cellSize = 1.5 * scale;
+        const qrSize = qr.getModuleCount() * cellSize;
+        const canvas = document.createElement('canvas');
+        canvas.width = qrSize;
+        canvas.height = qrSize;
+        const ctx = canvas.getContext('2d');
+        
+        // Enable high-quality image rendering
+        ctx.imageSmoothingEnabled = false;
+        
+        // Draw white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, qrSize, qrSize);
+        
+        // Draw QR code with higher resolution
+        ctx.fillStyle = '#000000';
+        for (let row = 0; row < qr.getModuleCount(); row++) {
+            for (let col = 0; col < qr.getModuleCount(); col++) {
+                if (qr.isDark(row, col)) {
+                    ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+                }
+            }
+        }
+
+        // Add Swiss Cross in the center of QR code
+        const moduleCount = qr.getModuleCount();
+        const centerModule = Math.floor(moduleCount / 2);
+        const crossModuleSize = 7; // Size of the cross area in modules
+        const crossStart = centerModule - Math.floor(crossModuleSize / 2);
+        
+        // First draw a slightly larger white background
+        const padding = cellSize * 0.5; // Add padding for white border
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(
+            crossStart * cellSize - padding,
+            crossStart * cellSize - padding,
+            crossModuleSize * cellSize + padding * 2,
+            crossModuleSize * cellSize + padding * 2
+        );
+
+        // Draw black background for cross
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(
+            crossStart * cellSize,
+            crossStart * cellSize,
+            crossModuleSize * cellSize,
+            crossModuleSize * cellSize
+        );
+
+        // Draw the white Swiss cross
+        const crossThickness = Math.ceil(cellSize * 1.5); // Thickness of cross lines
+        const crossLength = Math.floor(crossModuleSize * cellSize * 0.6); // Length of cross lines
+        const crossCenter = (crossStart + crossModuleSize / 2) * cellSize;
+
+        ctx.fillStyle = '#ffffff';
+        // Horizontal bar of the cross
+        ctx.fillRect(
+            crossCenter - crossLength / 2,
+            crossCenter - crossThickness / 2,
+            crossLength,
+            crossThickness
+        );
+        // Vertical bar of the cross
+        ctx.fillRect(
+            crossCenter - crossThickness / 2,
+            crossCenter - crossLength / 2,
+            crossThickness,
+            crossLength
+        );
+
+        // Draw white background rectangle for QR code
+        doc.setFillColor(255, 255, 255);
+        doc.rect(qrX - 2, qrY - 2, qrWidth + 4, qrHeight + 4, 'F');
+
+        // Draw corner marks
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.5);
+        
+        // Top left corner
+        doc.line(qrX - 2, qrY - 2, qrX + 3, qrY - 2);
+        doc.line(qrX - 2, qrY - 2, qrX - 2, qrY + 3);
+        
+        // Top right corner
+        doc.line(qrX + qrWidth - 3, qrY - 2, qrX + qrWidth + 2, qrY - 2);
+        doc.line(qrX + qrWidth + 2, qrY - 2, qrX + qrWidth + 2, qrY + 3);
+        
+        // Bottom left corner
+        doc.line(qrX - 2, qrY + qrHeight - 3, qrX - 2, qrY + qrHeight + 2);
+        doc.line(qrX - 2, qrY + qrHeight + 2, qrX + 3, qrY + qrHeight + 2);
+        
+        // Bottom right corner
+        doc.line(qrX + qrWidth - 3, qrY + qrHeight + 2, qrX + qrWidth + 2, qrY + qrHeight + 2);
+        doc.line(qrX + qrWidth + 2, qrY + qrHeight - 3, qrX + qrWidth + 2, qrY + qrHeight + 2);
+
+        // Add QR code
+        doc.addImage(canvas.toDataURL('image/png', 1.0), 'PNG', qrX, qrY, qrWidth, qrHeight);
+
+        // Add currency and amount section below QR code
+        const currencyX = qrX;
+        const currencyY = qrY + qrHeight + 15;
         doc.setFont("helvetica", "bold");
-        doc.text("Bankverbindung:", margin, paymentY + 10);
+        doc.text("Währung", currencyX, currencyY);
+        doc.text("Betrag", currencyX + 25, currencyY);
         
         doc.setFont("helvetica", "normal");
-        doc.text([
-            formData.sender_name || costConfig.sender_name,
-            formData.company_city || costConfig.company_city,
-            formData.company_bank || costConfig.company_bank,
-            `IBAN: ${formData.company_iban || costConfig.company_iban}`,
-            formData.company_twint ? `oder TWINT an: ${formData.company_twint}` : ""
-        ].filter(line => line !== ""), margin, paymentY + 15);
+        doc.text("CHF", currencyX, currencyY + 5);
+        doc.text(totalCost.toFixed(2), currencyX + 25, currencyY + 5);
 
-        // Füge Fußzeile hinzu
+        // Add separator line above payment information
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(margin, qrY - 12, pageWidth - margin, qrY - 12);
+
+        // Payment information layout
+        const paymentInfoX = margin;
+        const paymentStartY = qrY - 7;
+        const lineSpacing = 6;
+
+        // Zahlungsbedingungen
+        doc.setFont("helvetica", "normal");
+        doc.text(formData.payment_terms || costConfig.payment_terms, paymentInfoX, paymentStartY);
+
+        // Konto / Zahlbar an (mit Abstand)
+        doc.setFont("helvetica", "bold");
+        doc.text("Konto / Zahlbar an", paymentInfoX, paymentStartY + lineSpacing * 2);
+
+        // IBAN
+        doc.setFont("helvetica", "normal");
+        doc.text(formData.company_iban || costConfig.company_iban, paymentInfoX, paymentStartY + lineSpacing * 3);
+
+        // Name und Firma
+        const bankInfoName = (formData.company_name || costConfig.company_name) ? 
+            `${formData.sender_name || costConfig.sender_name}, ${formData.company_name || costConfig.company_name}` : 
+            (formData.sender_name || costConfig.sender_name);
+        doc.text(bankInfoName, paymentInfoX, paymentStartY + lineSpacing * 4);
+
+        // Adresse
+        doc.text(formData.company_street || costConfig.company_street, paymentInfoX, paymentStartY + lineSpacing * 5);
+        doc.text(formData.company_city || costConfig.company_city, paymentInfoX, paymentStartY + lineSpacing * 6);
+
+        // TWINT Information (mit zusätzlichem Abstand)
+        if (formData.company_twint || costConfig.company_twint) {
+            doc.text(`TWINT: ${formData.company_twint || costConfig.company_twint}`, paymentInfoX, paymentStartY + lineSpacing * 8);
+        }
+
+        // Footer
         doc.setFillColor(245, 245, 245);
         doc.rect(0, pageHeight - 6, pageWidth, 6, 'F');
         doc.setFontSize(8);
@@ -2385,7 +2600,7 @@ function exportToPDF(formData = {}) {
         doc.text("Erstellt mit 3D Druck Kostenrechner", margin, pageHeight - 2);
         doc.text("© 2025 piodeer. All rights reserved.", pageWidth - margin, pageHeight - 2, { align: 'right' });
 
-        // Speichere das PDF
+        // Save PDF
         const pdfName = `3D-Druck-Kostenrechnung_${currentDateStr.replace(/\./g, '-')}_${currentTimeStr.replace(':', '-')}.pdf`;
         doc.save(pdfName);
     };
