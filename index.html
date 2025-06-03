@@ -2451,10 +2451,20 @@ function exportToPDF(formData = {}) {
         doc.setPage(1);
 
         // Payment section layout
-        const qrX = pageWidth - margin - 52;
-        const qrY = paymentY;
-        const qrWidth = 46;
-        const qrHeight = 46;
+        const qrX = pageWidth - margin - 46; // Slightly adjusted for smaller QR code
+        const qrY = paymentY + 12; // Moved down to make space for title
+        const qrWidth = 40; // Smaller QR code
+        const qrHeight = 40; // Smaller QR code
+
+        // Add "Zahlteil" title
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text("Zahlteil", qrX, qrY - 6);
+
+        // Add Swiss e-banking note with professional wording
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(8);
+        doc.text("Dieser QR-Code ist mit allen Schweizer E-Banking-Systemen kompatibel.", margin, qrY - 6);
 
         // Generate QR Code
         const qrString = generateQRString(formData, totalCost, generateDocumentNumber());
@@ -2565,49 +2575,52 @@ function exportToPDF(formData = {}) {
         const currencyX = qrX;
         const currencyY = qrY + qrHeight + 8;
         doc.setFont("helvetica", "bold");
+        doc.setFontSize(9); // Decreased from 11
         doc.text("Währung", currencyX, currencyY);
         doc.text("Betrag", currencyX + 25, currencyY);
         
         doc.setFont("helvetica", "normal");
+        doc.setFontSize(9); // Decreased from 11
         doc.text("CHF", currencyX, currencyY + 5);
         doc.text(totalCost.toFixed(2), currencyX + 25, currencyY + 5);
 
         // Add separator line above payment information
         doc.setDrawColor(180, 180, 180); // Grauer Trennstrich
         doc.setLineWidth(0.3);
-        doc.line(margin, qrY - 8, pageWidth - margin, qrY - 8); // 4px nach unten verschoben (von -12 zu -8)
+        doc.line(margin, qrY - 16, pageWidth - margin, qrY - 16); // Moved higher (from -8 to -16)
 
         // Payment information layout
         const paymentInfoX = margin;
-        const paymentStartY = qrY - 7;
-        const lineSpacing = 6;
+        const paymentStartY = qrY - 1; // Reduced space (from -3)
+        const lineSpacing = 5; // Reduced spacing (from 6)
 
-        // Zahlungsbedingungen
-        doc.setFont("helvetica", "normal");
-        doc.text(formData.payment_terms || costConfig.payment_terms, paymentInfoX, paymentStartY + 10);
-
-        // Konto / Zahlbar an (mit Abstand)
+        // Konto / Zahlbar an
         doc.setFont("helvetica", "bold");
-        doc.text("Konto / Zahlbar an", paymentInfoX, paymentStartY + lineSpacing * 2 + 10);
+        doc.setFontSize(10); // Added font size
+        doc.text("Konto / Zahlbar an", paymentInfoX, paymentStartY + lineSpacing);
 
         // IBAN
         doc.setFont("helvetica", "normal");
-        doc.text(formData.company_iban || costConfig.company_iban, paymentInfoX, paymentStartY + lineSpacing * 3 + 10);
+        doc.text(formData.company_iban || costConfig.company_iban, paymentInfoX, paymentStartY + lineSpacing * 3);
 
         // Name und Firma
         const bankInfoName = (formData.company_name || costConfig.company_name) ? 
             `${formData.sender_name || costConfig.sender_name}, ${formData.company_name || costConfig.company_name}` : 
             (formData.sender_name || costConfig.sender_name);
-        doc.text(bankInfoName, paymentInfoX, paymentStartY + lineSpacing * 4 + 10);
+        doc.text(bankInfoName, paymentInfoX, paymentStartY + lineSpacing * 4);
 
         // Adresse
-        doc.text(formData.company_street || costConfig.company_street, paymentInfoX, paymentStartY + lineSpacing * 5 + 10);
-        doc.text(formData.company_city || costConfig.company_city, paymentInfoX, paymentStartY + lineSpacing * 6 + 10);
+        doc.text(formData.company_street || costConfig.company_street, paymentInfoX, paymentStartY + lineSpacing * 5);
+        doc.text(formData.company_city || costConfig.company_city, paymentInfoX, paymentStartY + lineSpacing * 6);
 
-        // TWINT Information (mit zusätzlichem Abstand)
+        // TWINT Information
         if (formData.company_twint || costConfig.company_twint) {
-            doc.text(`TWINT: ${formData.company_twint || costConfig.company_twint}`, paymentInfoX, paymentStartY + lineSpacing * 8 + 10);
+            doc.text(`TWINT: ${formData.company_twint || costConfig.company_twint}`, paymentInfoX, paymentStartY + lineSpacing * 8);
         }
+
+        // Zahlungsbedingungen (now below TWINT)
+        doc.setFont("helvetica", "normal");
+        doc.text(formData.payment_terms || costConfig.payment_terms, paymentInfoX, paymentStartY + lineSpacing * 9.5);
 
         // Footer
         doc.setFillColor(245, 245, 245);
