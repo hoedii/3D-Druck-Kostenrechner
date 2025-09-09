@@ -737,7 +737,7 @@ background-color: #555;
 </header>
 <div class="container">
 <h2>Dateien hochladen</h2>
-<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next geslicete GCode-Dateien (FDM) und PhotonWorkshop geslicete pm4u-Dateien (Resin).</p>
+<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next und BambuStudio geslicete GCode-Dateien (FDM) sowie PhotonWorkshop geslicete pm4u-Dateien (Resin).</p>
 <div class="file-actions">
     <div class="input-section">
         <div class="file-input-group">
@@ -971,6 +971,33 @@ background-color: #555;
         <div class="settings-actions">
             <button id="cancelPdfBtn" style="background-color: #999;">Abbrechen</button>
             <button id="confirmPdfBtn" style="background-color: #64b5f6;">PDF erstellen</button>
+        </div>
+    </div>
+</div>
+
+<!-- Material Modal -->
+<div id="materialModal" class="modal">
+    <div class="modal-content" style="max-width: 500px;">
+        <span class="close">&times;</span>
+        <h2>Filament-Typ auswählen</h2>
+        
+        <div class="settings-grid" style="grid-template-columns: 1fr;">
+            <div class="settings-group">
+                <div class="setting-item">
+                    <label>Wählen Sie das verwendete Filament:</label>
+                    <select id="bambuMaterialSelect" style="width: 100%; padding: 8px; margin-top: 10px;">
+                        <option value="PLA">PLA</option>
+                        <option value="ABS">ABS</option>
+                        <option value="TPU">TPU</option>
+                        <option value="PETG">PETG</option>
+                        <option value="ASA">ASA</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-actions" style="margin-top: 20px;">
+            <button id="confirmMaterialBtn" style="background-color: #64b5f6;">Bestätigen</button>
         </div>
     </div>
 </div>
@@ -1514,11 +1541,25 @@ function processGCodeFile(file) {
                     }
                 } catch (e) { console.error("Error parsing GCode material info:", e); }
             }
+            
+            // Standard Prusa/Slicer Filament-Muster
             const filamentMatch = gcodeText.match(/; total filament used \[g\] = (\d+\.\d+)/);
-            if (filamentMatch) usedFilament = parseFloat(filamentMatch[1]);
+            // Bambu Lab Filament-Muster
+            const bambuFilamentMatch = gcodeText.match(/; total filament weight \[g\] : (\d+\.\d+)/);
+            
+            if (filamentMatch) {
+                usedFilament = parseFloat(filamentMatch[1]);
+            } else if (bambuFilamentMatch) {
+                usedFilament = parseFloat(bambuFilamentMatch[1]);
+            }
+            
+            // Standard Prusa/Slicer Zeit-Muster
             const timeMatch1 = gcodeText.match(/; print_time = ([\ddhms\s]+)/);
             const timeMatch2 = gcodeText.match(/;TIME:(\d+)/);
             const timeMatch3 = gcodeText.match(/; estimated printing time.*?= ([\dhms\s]+)/i);
+            // Bambu Lab Zeit-Muster
+            const bambuTimeMatch = gcodeText.match(/; total estimated time: ([\ddhms\s]+)/);
+            
             let totalSeconds = 0;
             if (timeMatch1) {
                 printTimeStr = timeMatch1[1].trim();
@@ -1532,54 +1573,139 @@ function processGCodeFile(file) {
                 printTimeStr = timeMatch3[1].trim();
                 printTime = convertTimeToHours(printTimeStr);
                 totalSeconds = printTime * 3600;
+            } else if (bambuTimeMatch) {
+                printTimeStr = bambuTimeMatch[1].trim();
+                printTime = convertTimeToHours(printTimeStr);
+                totalSeconds = printTime * 3600;
             } else {
                 printTimeStr = 'Unbekannt';
                 printTime = 0;
                 totalSeconds = 0;
             }
-            const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
-            const materialCost = usedFilament / 1000 * pricePerKg;
-            let timeCost = 0;
-            let timePricePerHour = 0;
-            if (printTime > 0) {
-                if (printTime <= 5) {
-                    timeCost = printTime * costConfig.time_price_per_hour;
-                    timePricePerHour = costConfig.time_price_per_hour;
+            
+            // Prüfen, ob es sich um eine Bambu Lab GCODE-Datei handelt
+            const isBambuLabGcode = bambuFilamentMatch || bambuTimeMatch;
+            
+            if (isBambuLabGcode) {
+                // Zeige das Material-Auswahl-Modal an
+                const materialModal = document.getElementById('materialModal');
+                const confirmMaterialBtn = document.getElementById('confirmMaterialBtn');
+                const bambuMaterialSelect = document.getElementById('bambuMaterialSelect');
+                const closeBtn = materialModal.querySelector('.close');
+                
+                // Setze den Standardwert auf PLA
+                bambuMaterialSelect.value = 'PLA';
+                
+                // Zeige das Modal an
+                materialModal.style.display = 'block';
+                
+                // Event-Handler für das Schließen des Modals
+                closeBtn.onclick = function() {
+                    materialModal.style.display = 'none';
+                    // Verwende PLA als Standard, wenn der Benutzer abbricht
+                    processBambuGcodeWithMaterial('PLA');
+                };
+                
+                // Event-Handler für das Bestätigen der Materialauswahl
+                confirmMaterialBtn.onclick = function() {
+                    const selectedMaterial = bambuMaterialSelect.value;
+                    materialModal.style.display = 'none';
+                    processBambuGcodeWithMaterial(selectedMaterial);
+                };
+                
+                // Funktion zum Verarbeiten des GCODE mit dem ausgewählten Material
+                function processBambuGcodeWithMaterial(selectedMaterial) {
+                    materialType = selectedMaterial;
+                    const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
+                    const materialCost = usedFilament / 1000 * pricePerKg;
+                    let timeCost = 0;
+                    let timePricePerHour = 0;
+                    if (printTime > 0) {
+                        if (printTime <= 5) {
+                            timeCost = printTime * costConfig.time_price_per_hour;
+                            timePricePerHour = costConfig.time_price_per_hour;
+                        }
+                        else if (printTime <= 10) {
+                            timeCost = printTime * costConfig.time_price_per_hour5;
+                            timePricePerHour = costConfig.time_price_per_hour5;
+                        }
+                        else {
+                            timeCost = printTime * costConfig.time_price_per_hour10;
+                            timePricePerHour = costConfig.time_price_per_hour10;
+                        }
+                    }
+                    const materialTooltip = `Gewicht (${(usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${materialCost.toFixed(2)} CHF`;
+                    let timeTooltipText = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
+                    if (printTime > 0) { timeTooltipText = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`; }
+                    const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
+                    const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
+                    const totalFileCost = materialCost + timeCost + energyCost;
+                    allResults.push({
+                        id: uniqueId,
+                        fileName: file.name,
+                        type: 'gcode',
+                        materialType,
+                        usedFilament,
+                        volume: null,
+                        printTimeStr,
+                        materialCost,
+                        timeCost,
+                        energyCost,
+                        totalFileCost,
+                        materialTooltip,
+                        timeTooltip: timeTooltipText,
+                        energyTooltip
+                    });
+                    renderResults();
+                    localStorage.setItem('savedResults', JSON.stringify(allResults));
+                    resolve();
                 }
-                else if (printTime <= 10) {
-                    timeCost = printTime * costConfig.time_price_per_hour5;
-                    timePricePerHour = costConfig.time_price_per_hour5;
+            } else {
+                // Standardverarbeitung für nicht-Bambu Lab GCODE-Dateien
+                const pricePerKg = costConfig[`material_price_per_kg_${materialType.toUpperCase()}`] || 0;
+                const materialCost = usedFilament / 1000 * pricePerKg;
+                let timeCost = 0;
+                let timePricePerHour = 0;
+                if (printTime > 0) {
+                    if (printTime <= 5) {
+                        timeCost = printTime * costConfig.time_price_per_hour;
+                        timePricePerHour = costConfig.time_price_per_hour;
+                    }
+                    else if (printTime <= 10) {
+                        timeCost = printTime * costConfig.time_price_per_hour5;
+                        timePricePerHour = costConfig.time_price_per_hour5;
+                    }
+                    else {
+                        timeCost = printTime * costConfig.time_price_per_hour10;
+                        timePricePerHour = costConfig.time_price_per_hour10;
+                    }
                 }
-                else {
-                    timeCost = printTime * costConfig.time_price_per_hour10;
-                    timePricePerHour = costConfig.time_price_per_hour10;
-                }
+                const materialTooltip = `Gewicht (${(usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${materialCost.toFixed(2)} CHF`;
+                let timeTooltipText = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
+                if (printTime > 0) { timeTooltipText = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`; }
+                const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
+                const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
+                const totalFileCost = materialCost + timeCost + energyCost;
+                allResults.push({
+                    id: uniqueId,
+                    fileName: file.name,
+                    type: 'gcode',
+                    materialType,
+                    usedFilament,
+                    volume: null,
+                    printTimeStr,
+                    materialCost,
+                    timeCost,
+                    energyCost,
+                    totalFileCost,
+                    materialTooltip,
+                    timeTooltip: timeTooltipText,
+                    energyTooltip
+                });
+                renderResults();
+                localStorage.setItem('savedResults', JSON.stringify(allResults));
+                resolve();
             }
-            const materialTooltip = `Gewicht (${(usedFilament).toFixed(2)} g) * Preis pro kg (${pricePerKg.toFixed(2)} CHF/kg) = ${materialCost.toFixed(2)} CHF`;
-            let timeTooltipText = 'Druckzeit unbekannt, Zeitkosten 0 CHF';
-            if (printTime > 0) { timeTooltipText = `Druckzeit (${printTime.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) = ${timeCost.toFixed(2)} CHF`; }
-            const energyCost = printTime * 0.25 * costConfig.energy_price_per_kwh;
-            const energyTooltip = `Druckzeit (${printTime.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
-            const totalFileCost = materialCost + timeCost + energyCost;
-            allResults.push({
-                id: uniqueId,
-                fileName: file.name,
-                type: 'gcode',
-                materialType,
-                usedFilament,
-                volume: null,
-                printTimeStr,
-                materialCost,
-                timeCost,
-                energyCost,
-                totalFileCost,
-                materialTooltip,
-                timeTooltip: timeTooltipText,
-                energyTooltip
-            });
-            renderResults();
-            localStorage.setItem('savedResults', JSON.stringify(allResults));
-            resolve();
         };
         
         reader.onerror = function(e) {
