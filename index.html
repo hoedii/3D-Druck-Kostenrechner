@@ -737,11 +737,11 @@ background-color: #555;
 </header>
 <div class="container">
 <h2>Dateien hochladen</h2>
-<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next und BambuStudio geslicete GCode-Dateien (FDM) sowie PhotonWorkshop geslicete pm4u-Dateien (Resin).</p>
+<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next geslicete GCode-Dateien (FDM), PhotonWorkshop geslicete pm4u-Dateien (Resin) sowie 3MF-Dateien (Bambulab).</p>
 <div class="file-actions">
     <div class="input-section">
         <div class="file-input-group">
-            <input type="file" id="gcodeInput" accept=".gcode,.pm4u" multiple style="display: none;">
+            <input type="file" id="gcodeInput" accept=".gcode,.pm4u,.3mf,.3MF,model/3mf" multiple style="display: none;">
             <label for="gcodeInput" style="display: block; width: 100%;">
                 <div class="custom-file-input">
                     <span class="button-text">Dateien auswählen</span>
@@ -825,6 +825,14 @@ background-color: #555;
                 <div class="setting-item">
                     <label>ASA</label>
                     <input type="number" step="0.01" id="material_price_per_kg_ASA">
+                </div>
+                <div class="setting-item">
+                    <label>PA6 CF</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_PA6_CF">
+                </div>
+                <div class="setting-item">
+                    <label>ABS GF</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_ABS_GF">
                 </div>
             </div>
 
@@ -988,9 +996,11 @@ background-color: #555;
                     <select id="bambuMaterialSelect" style="width: 100%; padding: 8px; margin-top: 10px;">
                         <option value="PLA">PLA</option>
                         <option value="ABS">ABS</option>
+                        <option value="ABS_GF">ABS GF</option>
                         <option value="TPU">TPU</option>
                         <option value="PETG">PETG</option>
                         <option value="ASA">ASA</option>
+                        <option value="PA6_CF">PA6 CF</option>
                     </select>
                 </div>
             </div>
@@ -1016,6 +1026,8 @@ const costConfig = {
     material_price_per_kg_TPU: 28.0,
     material_price_per_kg_PETG: 18.0,
     material_price_per_kg_ASA: 32.0,
+    material_price_per_kg_PA6_CF: 83.0,
+    material_price_per_kg_ABS_GF: 32.0,
     material_price_per_kg_TOUGH_RESIN: 56.0,
     material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
     material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
@@ -1344,9 +1356,11 @@ function getFilteredSettings() {
         'time_price_per_hour10',
         'material_price_per_kg_PLA',
         'material_price_per_kg_ABS',
+        'material_price_per_kg_ABS_GF',
         'material_price_per_kg_TPU',
         'material_price_per_kg_PETG',
         'material_price_per_kg_ASA',
+        'material_price_per_kg_PA6_CF',
         'material_price_per_kg_TOUGH_RESIN',
         'material_price_per_kg_ABS_LIKE_RESIN_V2',
         'material_price_per_kg_ABS_LIKE_RESIN_PRO',
@@ -1882,7 +1896,8 @@ function processPM4UFile(file) {
 function processSelectedFiles(files) {
     const compatibleFiles = Array.from(files).filter(file => 
         file.name.toLowerCase().endsWith('.gcode') || 
-        file.name.toLowerCase().endsWith('.pm4u')
+        file.name.toLowerCase().endsWith('.pm4u') ||
+        file.name.toLowerCase().endsWith('.3mf')
     );
     
     if (compatibleFiles.length === 0) {
@@ -1899,7 +1914,57 @@ function processSelectedFiles(files) {
             processGCodeFile(file);
         } else if (file.name.toLowerCase().endsWith('.pm4u')) {
             processPM4UFile(file);
+        } else if (file.name.toLowerCase().endsWith('.3mf')) {
+            process3MFFile(file);
         }
+    });
+}
+
+// Verarbeitet eine 3MF-Datei: öffnet ZIP und extrahiert Metadata/plate_1.gcode
+function process3MFFile(file) {
+    return new Promise((resolve) => {
+        // Generiere eine eindeutige ID für diese Datei (wird später an GCODE-Ergebnis weitergereicht)
+        const uniqueId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        // Füge die Datei zu originalFiles hinzu
+        if (!originalFiles.includes(file)) {
+            originalFiles.push(file);
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const arrayBuffer = event.target.result;
+            JSZip.loadAsync(arrayBuffer).then(async function(zip) {
+                // Erwarteter Pfad in 3MF: Metadata/plate_1.gcode
+                const gcodeEntry = zip.file('Metadata/plate_1.gcode');
+                if (!gcodeEntry) {
+                    alert(`In der 3MF-Datei ${file.name} wurde keine Datei \`Metadata/plate_1.gcode\` gefunden.`);
+                    resolve();
+                    return;
+                }
+                try {
+                    const gcodeText = await gcodeEntry.async('string');
+                    // Erzeuge eine temporäre File-Instanz für die Wiederverwendung der GCODE-Verarbeitung
+                    const gcodeBlob = new Blob([gcodeText], { type: 'text/plain' });
+                    const gcodeFile = new File([gcodeBlob], `${file.name.replace(/\.3mf$/i, '')}_plate_1.gcode`, { type: 'text/plain' });
+                    await processGCodeFile(gcodeFile);
+                } catch (err) {
+                    console.error(`Fehler beim Extrahieren von plate_1.gcode aus ${file.name}:`, err);
+                    alert(`Fehler beim Extrahieren von Metadata/plate_1.gcode aus ${file.name}.`);
+                }
+                resolve();
+            }).catch(function(e) {
+                console.error(`Fehler beim Öffnen der 3MF-Datei ${file.name} (ZIP):`, e);
+                alert(`Die 3MF-Datei ${file.name} konnte nicht geöffnet werden.`);
+                resolve();
+            });
+        };
+        reader.onerror = function(e) {
+            console.error(`Fehler beim Lesen der 3MF-Datei ${file.name}:`, e);
+            alert(`Die 3MF-Datei ${file.name} konnte nicht gelesen werden.`);
+            resolve();
+        };
+        reader.readAsArrayBuffer(file);
     });
 }
 
@@ -1909,7 +1974,8 @@ function updateFileStatus() {
     const folderStatusElement = document.querySelector('.folder-status');
     const compatibleFiles = selectedFiles.filter(file => 
         file.name.toLowerCase().endsWith('.gcode') || 
-        file.name.toLowerCase().endsWith('.pm4u')
+        file.name.toLowerCase().endsWith('.pm4u') ||
+        file.name.toLowerCase().endsWith('.3mf')
     );
     
     if (compatibleFiles.length === 0) {
@@ -1919,17 +1985,22 @@ function updateFileStatus() {
     } else {
         const gcodeCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.gcode')).length;
         const pm4uCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.pm4u')).length;
+        const threeMfCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.3mf')).length;
         
         let statusText = `${compatibleFiles.length} Datei(en)`;
-        if (gcodeCount > 0 || pm4uCount > 0) {
+            if (gcodeCount > 0 || pm4uCount > 0 || threeMfCount > 0) {
             statusText += ' (';
             if (gcodeCount > 0) {
                 statusText += `${gcodeCount} GCode`;
-                if (pm4uCount > 0) statusText += ', ';
+                if (pm4uCount > 0 || threeMfCount > 0) statusText += ', ';
             }
             if (pm4uCount > 0) {
                 statusText += `${pm4uCount} PM4U`;
-            }
+                if (threeMfCount > 0) statusText += ', ';
+                }
+                if (threeMfCount > 0) {
+                    statusText += `${threeMfCount} 3MF`;
+                }
             statusText += ')';
         }
 
