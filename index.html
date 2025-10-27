@@ -811,6 +811,10 @@ background-color: #555;
                     <input type="number" step="0.01" id="material_price_per_kg_PLA">
                 </div>
                 <div class="setting-item">
+                    <label>PLA CF</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_PLA_CF">
+                </div>
+                <div class="setting-item">
                     <label>ABS</label>
                     <input type="number" step="0.01" id="material_price_per_kg_ABS">
                 </div>
@@ -995,6 +999,7 @@ background-color: #555;
                     <label>Wählen Sie das verwendete Filament:</label>
                     <select id="bambuMaterialSelect" style="width: 100%; padding: 8px; margin-top: 10px;">
                         <option value="PLA">PLA</option>
+                        <option value="PLA_CF">PLA CF</option>
                         <option value="ABS">ABS</option>
                         <option value="ABS_GF">ABS GF</option>
                         <option value="TPU">TPU</option>
@@ -1022,6 +1027,7 @@ const costConfig = {
     time_price_per_hour5: 1.75,
     time_price_per_hour10: 1.1,
     material_price_per_kg_PLA: 25.0,
+    material_price_per_kg_PLA_CF: 27.0,
     material_price_per_kg_ABS: 23.0,
     material_price_per_kg_TPU: 28.0,
     material_price_per_kg_PETG: 18.0,
