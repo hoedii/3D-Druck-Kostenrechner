@@ -737,11 +737,11 @@ background-color: #555;
 </header>
 <div class="container">
 <h2>Dateien hochladen</h2>
-<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next geslicete GCode-Dateien (FDM), PhotonWorkshop geslicete pm4u-Dateien (Resin) sowie 3MF-Dateien (Bambulab).</p>
+<p style="font-size: 12px; color: #777;">Kompatibel sind mit Anycubic Slicer Next geslicete GCode-Dateien (FDM), PhotonWorkshop geslicete pm4u-Dateien (Resin), pp1-Dateien (Anycubic Resin) sowie 3MF-Dateien (Bambulab).</p>
 <div class="file-actions">
     <div class="input-section">
         <div class="file-input-group">
-            <input type="file" id="gcodeInput" accept=".gcode,.pm4u,.3mf,.3MF,model/3mf" multiple style="display: none;">
+            <input type="file" id="gcodeInput" accept=".gcode,.pm4u,.pp1,.3mf,.3MF,model/3mf" multiple style="display: none;">
             <label for="gcodeInput" style="display: block; width: 100%;">
                 <div class="custom-file-input">
                     <span class="button-text">Dateien auswählen</span>
@@ -843,8 +843,8 @@ background-color: #555;
             <div class="settings-group">
                 <h3>Resin Materialkosten (pro kg)</h3>
                 <div class="setting-item">
-                    <label>TOUGH RESIN</label>
-                    <input type="number" step="0.01" id="material_price_per_kg_TOUGH_RESIN">
+                    <label>TOUGH RESIN ULTRA</label>
+                    <input type="number" step="0.01" id="material_price_per_kg_TOUGH_RESIN_ULTRA">
                 </div>
                 <div class="setting-item">
                     <label>ABS LIKE RESIN V2</label>
@@ -859,8 +859,8 @@ background-color: #555;
             <div class="settings-group">
                 <h3>Resin Reinigungskosten</h3>
                 <div class="setting-item">
-                    <label>TOUGH RESIN</label>
-                    <input type="number" step="0.01" id="clean_price_TOUGH_RESIN">
+                    <label>TOUGH RESIN ULTRA</label>
+                    <input type="number" step="0.01" id="clean_price_TOUGH_RESIN_ULTRA">
                 </div>
                 <div class="setting-item">
                     <label>ABS LIKE RESIN PRO</label>
@@ -1034,11 +1034,11 @@ const costConfig = {
     material_price_per_kg_ASA: 32.0,
     material_price_per_kg_PA6_CF: 83.0,
     material_price_per_kg_ABS_GF: 32.0,
-    material_price_per_kg_TOUGH_RESIN: 56.0,
+    material_price_per_kg_TOUGH_RESIN_ULTRA: 56.0,
     material_price_per_kg_ABS_LIKE_RESIN_V2: 35.0,
     material_price_per_kg_ABS_LIKE_RESIN_PRO: 40.0,
     energy_price_per_kwh: 0.40,
-    clean_price_TOUGH_RESIN: 5.0,
+    clean_price_TOUGH_RESIN_ULTRA: 5.0,
     clean_price_ABS_LIKE_RESIN_PRO: 5.0,
     clean_price_ABS_LIKE_RESIN_V2: 3.0,
     // Absender-Informationen
@@ -1367,11 +1367,11 @@ function getFilteredSettings() {
         'material_price_per_kg_PETG',
         'material_price_per_kg_ASA',
         'material_price_per_kg_PA6_CF',
-        'material_price_per_kg_TOUGH_RESIN',
+        'material_price_per_kg_TOUGH_RESIN_ULTRA',
         'material_price_per_kg_ABS_LIKE_RESIN_V2',
         'material_price_per_kg_ABS_LIKE_RESIN_PRO',
         'energy_price_per_kwh',
-        'clean_price_TOUGH_RESIN',
+        'clean_price_TOUGH_RESIN_ULTRA',
         'clean_price_ABS_LIKE_RESIN_PRO',
         'clean_price_ABS_LIKE_RESIN_V2',
         'sender_salutation',
@@ -1895,6 +1895,140 @@ function processPM4UFile(file) {
     });
 }
 
+function processPP1File(file) {
+    return new Promise((resolve) => {
+        const uniqueId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+
+        if (!originalFiles.includes(file)) {
+            originalFiles.push(file);
+        }
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const pp1Content = event.target.result;
+            JSZip.loadAsync(pp1Content).then(function(zip) {
+                zip.file("print_info.json").async("string").then(function(printInfoContent) {
+                    const printInfo = JSON.parse(printInfoContent);
+                    const printTimeSeconds = printInfo.print_time;
+                    const weight = printInfo.weight || 0;
+                    const volume = printInfo.volume || 0;
+
+                    zip.file("anycubic_photon_resins.pwsp").async("string").then(function(resinsContent) {
+                        let materialTypeName = 'TOUGH_RESIN_ULTRA';
+                        const activeResinsRegex = /"active_resins":\s*\[\s*"([^"]+)"/;
+                        const activeResinMatch = resinsContent.match(activeResinsRegex);
+                        if (activeResinMatch && activeResinMatch[1]) {
+                            const rawName = activeResinMatch[1];
+                            const parts = rawName.split('@');
+                            const materialSegment = parts.length >= 2 ? parts[1] : rawName;
+                            const upperSeg = materialSegment.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+                            const knownMappings = {
+                                'TOUGH_RESIN_ULTRA': 'TOUGH_RESIN_ULTRA',
+                                'TOUGH_RESIN': 'TOUGH_RESIN_ULTRA',
+                                'ABS_LIKE_RESIN_V2': 'ABS_LIKE_RESIN_V2',
+                                'ABS_LIKE_RESIN_PRO': 'ABS_LIKE_RESIN_PRO',
+                                'ABS_LIKE_RESIN': 'ABS_LIKE_RESIN_V2'
+                            };
+                            materialTypeName = knownMappings[upperSeg] || upperSeg;
+                        }
+
+                        const printTimeHours = printTimeSeconds / 3600;
+                        let baseTimeCost = 0;
+                        let timePricePerHour = 0;
+                        if (printTimeHours > 0) {
+                            if (printTimeHours <= 5) {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour;
+                                timePricePerHour = costConfig.time_price_per_hour;
+                            } else if (printTimeHours <= 10) {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour5;
+                                timePricePerHour = costConfig.time_price_per_hour5;
+                            } else {
+                                baseTimeCost = printTimeHours * costConfig.time_price_per_hour10;
+                                timePricePerHour = costConfig.time_price_per_hour10;
+                            }
+                        }
+
+                        const cleanPriceKey = 'clean_price_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                        const cleanPrice = costConfig[cleanPriceKey] || 0;
+                        const timeCost = baseTimeCost + cleanPrice;
+                        const energyCost = printTimeHours * 0.25 * costConfig.energy_price_per_kwh;
+
+                        const materialConfigKey = 'material_price_per_kg_' + materialTypeName.replace(/[^a-zA-Z0-9]/g, '_').toUpperCase();
+                        const configPricePerKg = costConfig[materialConfigKey];
+                        let materialPrice = 0;
+                        let materialTooltip = 'Materialkosten unbekannt (Preis oder Gewicht 0)';
+                        let displayVolume = volume;
+
+                        if (typeof configPricePerKg === 'number' && configPricePerKg > 0 && weight > 0) {
+                            materialPrice = (weight / 1000) * configPricePerKg;
+                            materialTooltip = `Gewicht (${weight.toFixed(2)} g) * Preis pro kg (${configPricePerKg.toFixed(2)} CHF/kg) = ${materialPrice.toFixed(2)} CHF`;
+                            displayVolume = weight / 1.1;
+                        } else if (typeof configPricePerKg === 'number' && configPricePerKg > 0 && volume > 0) {
+                            const resinDensity = 1.1;
+                            const massInKg = (volume * resinDensity) / 1000;
+                            materialPrice = massInKg * configPricePerKg;
+                            materialTooltip = `Volumen (${volume.toFixed(2)} cm³) * Dichte (1.1 g/cm³) * Preis (${configPricePerKg.toFixed(2)} CHF/kg) = ${materialPrice.toFixed(2)} CHF`;
+                        } else {
+                            console.warn('PP1 Resin material "' + materialTypeName + '" price not found. Key: ' + materialConfigKey);
+                        }
+
+                        const totalFileCost = materialPrice + timeCost + energyCost;
+                        const printTimeStr = formatTimeFromSeconds(printTimeSeconds);
+                        const timeTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Stundenansatz (${timePricePerHour.toFixed(2)} CHF/h) + Reinigung (${cleanPrice.toFixed(2)} CHF) = ${timeCost.toFixed(2)} CHF`;
+                        const energyTooltip = `Druckzeit (${printTimeHours.toFixed(2)}h) * Verbrauch (0.25 kW) * Preis (${costConfig.energy_price_per_kwh.toFixed(2)} CHF/kWh) = ${energyCost.toFixed(2)} CHF`;
+
+                        allResults.push({
+                            id: uniqueId,
+                            fileName: file.name,
+                            type: 'pm4u',
+                            materialType: materialTypeName,
+                            usedFilament: null,
+                            volume: displayVolume,
+                            printTimeStr,
+                            materialCost: materialPrice,
+                            timeCost,
+                            energyCost,
+                            totalFileCost,
+                            materialTooltip,
+                            timeTooltip,
+                            energyTooltip
+                        });
+                        renderResults();
+                        localStorage.setItem('savedResults', JSON.stringify(allResults));
+                        resolve();
+                    }).catch(function(e) {
+                        console.error('Error reading pwsp for ' + file.name + ':', e);
+                        document.getElementById('fileInfo').insertAdjacentHTML('beforeend',
+                            '<div class="gcode-result error"><div class="accordion"><span>' + file.name + ' - Fehler bei Resin-Info</span></div><div class="panel"><p>Fehler beim Lesen der Resin-Informationen aus der PP1-Datei.</p></div></div>');
+                        addAccordionListeners();
+                        resolve();
+                    });
+                }).catch(function(e) {
+                    console.error('Error reading print_info.json for ' + file.name + ':', e);
+                    document.getElementById('fileInfo').insertAdjacentHTML('beforeend',
+                        '<div class="gcode-result error"><div class="accordion"><span>' + file.name + ' - Fehler bei Druckinfo</span></div><div class="panel"><p>Fehler beim Lesen der Druckinformationen aus der PP1-Datei.</p></div></div>');
+                    addAccordionListeners();
+                    resolve();
+                });
+            }).catch(function(e) {
+                console.error('Error unzipping pp1 file ' + file.name + ':', e);
+                document.getElementById('fileInfo').insertAdjacentHTML('beforeend',
+                    '<div class="gcode-result error"><div class="accordion"><span>' + file.name + ' - Fehler beim Entpacken</span></div><div class="panel"><p>Fehler beim Entpacken der PP1-Datei.</p></div></div>');
+                addAccordionListeners();
+                resolve();
+            });
+        };
+        reader.onerror = function(e) {
+            console.error('Error reading pp1 file ' + file.name + ':', e);
+            document.getElementById('fileInfo').insertAdjacentHTML('beforeend',
+                '<div class="gcode-result error"><div class="accordion"><span>' + file.name + ' - Fehler beim Lesen</span></div><div class="panel"><p>Die PP1-Datei konnte nicht gelesen werden.</p></div></div>');
+            addAccordionListeners();
+            resolve();
+        };
+        reader.readAsArrayBuffer(file);
+    });
+}
+
 // Speichere die originalen Dateien
 // let originalFiles = [];  // Diese Deklaration entfernen, da sie bereits oben existiert
 
@@ -1903,11 +2037,12 @@ function processSelectedFiles(files) {
     const compatibleFiles = Array.from(files).filter(file => 
         file.name.toLowerCase().endsWith('.gcode') || 
         file.name.toLowerCase().endsWith('.pm4u') ||
+        file.name.toLowerCase().endsWith('.pp1') ||
         file.name.toLowerCase().endsWith('.3mf')
     );
     
     if (compatibleFiles.length === 0) {
-        alert("Keine kompatiblen Dateien gefunden. Bitte wählen Sie .gcode oder .pm4u Dateien aus.");
+        alert("Keine kompatiblen Dateien gefunden. Bitte wählen Sie .gcode, .pm4u, .pp1 oder .3mf Dateien aus.");
         return;
     }
     
@@ -1920,6 +2055,8 @@ function processSelectedFiles(files) {
             processGCodeFile(file);
         } else if (file.name.toLowerCase().endsWith('.pm4u')) {
             processPM4UFile(file);
+        } else if (file.name.toLowerCase().endsWith('.pp1')) {
+            processPP1File(file);
         } else if (file.name.toLowerCase().endsWith('.3mf')) {
             process3MFFile(file);
         }
@@ -1981,6 +2118,7 @@ function updateFileStatus() {
     const compatibleFiles = selectedFiles.filter(file => 
         file.name.toLowerCase().endsWith('.gcode') || 
         file.name.toLowerCase().endsWith('.pm4u') ||
+        file.name.toLowerCase().endsWith('.pp1') ||
         file.name.toLowerCase().endsWith('.3mf')
     );
     
@@ -1991,17 +2129,22 @@ function updateFileStatus() {
     } else {
         const gcodeCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.gcode')).length;
         const pm4uCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.pm4u')).length;
+        const pp1Count = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.pp1')).length;
         const threeMfCount = compatibleFiles.filter(f => f.name.toLowerCase().endsWith('.3mf')).length;
         
         let statusText = `${compatibleFiles.length} Datei(en)`;
-            if (gcodeCount > 0 || pm4uCount > 0 || threeMfCount > 0) {
+            if (gcodeCount > 0 || pm4uCount > 0 || pp1Count > 0 || threeMfCount > 0) {
             statusText += ' (';
             if (gcodeCount > 0) {
                 statusText += `${gcodeCount} GCode`;
-                if (pm4uCount > 0 || threeMfCount > 0) statusText += ', ';
+                if (pm4uCount > 0 || pp1Count > 0 || threeMfCount > 0) statusText += ', ';
             }
             if (pm4uCount > 0) {
                 statusText += `${pm4uCount} PM4U`;
+                if (pp1Count > 0 || threeMfCount > 0) statusText += ', ';
+                }
+            if (pp1Count > 0) {
+                statusText += `${pp1Count} PP1`;
                 if (threeMfCount > 0) statusText += ', ';
                 }
                 if (threeMfCount > 0) {
@@ -2088,14 +2231,15 @@ document.getElementById('folderInput').addEventListener('change', async function
         zipContent.forEach((relativePath, zipEntry) => {
             if (!zipEntry.dir && (
                 relativePath.toLowerCase().endsWith('.gcode') || 
-                relativePath.toLowerCase().endsWith('.pm4u')
+                relativePath.toLowerCase().endsWith('.pm4u') ||
+                relativePath.toLowerCase().endsWith('.pp1')
             )) {
                 compatibleFiles.push(zipEntry);
             }
         });
         
         if (compatibleFiles.length === 0 && !settingsFound) {
-            throw new Error("Keine kompatiblen Dateien in der ZIP-Datei gefunden. Unterstützte Formate: .gcode, .pm4u");
+            throw new Error("Keine kompatiblen Dateien in der ZIP-Datei gefunden. Unterstützte Formate: .gcode, .pm4u, .pp1");
         }
         
         // Verarbeite die gefundenen Dateien
@@ -2116,6 +2260,8 @@ document.getElementById('folderInput').addEventListener('change', async function
                     await processGCodeFile(file);
                 } else if (file.name.toLowerCase().endsWith('.pm4u')) {
                     await processPM4UFile(file);
+                } else if (file.name.toLowerCase().endsWith('.pp1')) {
+                    await processPP1File(file);
                 }
             } catch (error) {
                 console.error(`Fehler beim Verarbeiten der Datei ${zipEntry.name}:`, error);
@@ -2330,11 +2476,11 @@ async function loadSettingsFromFile(file) {
             'material_price_per_kg_TPU',
             'material_price_per_kg_PETG',
             'material_price_per_kg_ASA',
-            'material_price_per_kg_TOUGH_RESIN',
+            'material_price_per_kg_TOUGH_RESIN_ULTRA',
             'material_price_per_kg_ABS_LIKE_RESIN_V2',
             'material_price_per_kg_ABS_LIKE_RESIN_PRO',
             'energy_price_per_kwh',
-            'clean_price_TOUGH_RESIN',
+            'clean_price_TOUGH_RESIN_ULTRA',
             'clean_price_ABS_LIKE_RESIN_PRO',
             'clean_price_ABS_LIKE_RESIN_V2'
         ];
